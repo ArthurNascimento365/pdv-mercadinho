@@ -27,8 +27,10 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   quantidade e desconto editáveis na lista (`vendas:alterarQuantidade`).
 - **25/10 — desconto na venda** com seleção entre porcentagem e valor (R$).
 - **25/10 — controle de caixa opcional** (desligado = dono único, caixa aberto automaticamente).
-- Instalador `dist/PDV Mercadinho Setup 0.1.3.exe` gerado em 25/10/2026 (tela Vender nova,
-  desconto %/R$, controle de caixa opcional). Schema do banco na versão 7. 296 testes (29 arquivos).
+- **25/10 — visual novo** (sistema de design): Vender, Início, Caixa, listas, Configurações e
+  Backup. Tema escuro adiado pelo usuário; Relatórios, Pagamento e modais só herdaram os tokens.
+- Instalador `dist/PDV Mercadinho Setup 0.1.4.exe` gerado em 25/10/2026 (visual novo).
+  Schema do banco na versão 7. 296 testes (29 arquivos).
 
 ### Em andamento
 
@@ -63,7 +65,10 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - Restauração de backup testada só nos testes unitários, não no app (ela reinicia o programa).
 - Medidas da folha de etiquetas (Pimaco A4256, 63,5 × 38,1 mm) não conferidas em impressão.
 - Instalador sem assinatura digital (aviso do SmartScreen) e com o ícone padrão do Electron.
-- Tela Vender nova testada só no navegador com `window.pdv` simulado, não no Electron.
+- Visual novo testado no app compilado (`dist/win-unpacked`) com banco isolado
+  (`--user-data-dir` + `--remote-debugging-port`), não com o banco da loja.
+- Tema escuro: tokens prontos para `[data-tema='escuro']`, mas sem paleta escura nem opção em
+  Configurações. Relatórios ainda tem botão "Voltar" e cartões no estilo antigo.
 - Nesta máquina o `electron.exe` de `node_modules/electron/dist` não baixou (bug de dependência
   opcional do npm no `@electron-internal/extract-zip`): `npm run dev` não abre até reinstalar
   (`rm node_modules package-lock.json` + `npm i`, ou `npm i electron` de novo). `npm run dist`
@@ -78,7 +83,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.4.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.5.
 4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
@@ -153,6 +158,16 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - Renderer não acessa Node nem o banco: `contextIsolation` + `sandbox` ligados.
 - Tudo operável só pelo teclado: F2–F9 na tela inicial, Esc volta, F10 salva,
   Enter num formulário pula para o próximo campo.
+- **Sistema de design** (`src/renderer/src/estilos.css`): toda cor, fonte (`--fs-*`), espaço
+  (`--e-*`), canto (`--r-*`) e sombra vem dos tokens do `:root`. Nada de cor solta fora dele
+  (papel do cupom/QR têm `--papel*`/`--tinta`). Nomes antigos (`--destaque`, `--erro`,
+  `--aviso-fundo`) são apelidos. Ícones: `componentes/Icone.tsx` (SVG embutido, sem CDN).
+  Estados: `--perigo` (erro, cancelar, falta), `--alerta` (atenção, oferta), `--info` (sobra,
+  cliente), `--sucesso` (ok). Uma ação principal (`.primario`) por barra.
+- Layout: cabeçalho do `App.tsx` mostra módulo, caixa (atualiza no evento `pdv:caixa`), relógio e
+  "Esc Início" — as telas não têm botão "Voltar" próprio. Páginas: `.pagina-media` (até
+  1280 px, centralizada); seções em colunas com `.secoes-colunas`. Toda tabela já tem zebra e
+  linha `.selecionada` com barra verde. Tudo precisa caber em 1024×700 sem rolagem horizontal.
 - Produto nunca é apagado, só inativado (vendas antigas apontam para ele).
 - EAN precisa ter dígito verificador válido. Etiqueta de balança: EAN-13 com prefixo 2,
   formato (dígitos do código 4/5/6, preço ou peso) em `configuracoes` (`balanca.*`).
