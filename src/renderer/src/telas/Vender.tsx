@@ -5,6 +5,7 @@ import type { Produto } from '@shared/produtos'
 import { FORMAS_PAGAMENTO, lerDesconto, lerEntradaCaixa, type ItemVenda, type Venda } from '@shared/vendas'
 import type { Diagramado } from '@shared/impressao'
 import { BuscaCliente } from '../componentes/Clientes'
+import { Icone } from '../componentes/Icone'
 import { BuscaProduto, Confirmar, DescontoVenda, Prompt } from '../componentes/Modais'
 import { PesoBalanca } from '../componentes/PesoBalanca'
 import { PreviaCupom } from '../componentes/PreviaCupom'
@@ -26,19 +27,35 @@ type Modal =
 const qtd = (q: number, unidade: 'UN' | 'KG'): string =>
   unidade === 'KG' ? `${quantidadeParaTexto(q, 'KG')} kg` : quantidadeParaTexto(q, 'UN')
 
-/** Ações da barra do caixa: cada uma também tem a tecla de atalho. */
-const BOTOES: [tecla: string, rotulo: string][] = [
-  ['F2', 'Buscar produto'],
-  ['F3', 'Cliente (fiado)'],
-  ['F5', 'Desconto no item'],
-  ['F6', 'Desconto na venda'],
-  ['F7', 'Cancelar item'],
-  ['F8', 'Cancelar venda'],
-  ['F9', 'Cancelar última venda'],
-  ['F10', 'Pagamento'],
-  ['F11', 'Ver último cupom'],
-  ['F12', 'Reimprimir cupom'],
-  ['Escape', 'Sair']
+/**
+ * Barra de ações do caixa, agrupada pelo que a ação afeta. Cada botão também tem a tecla
+ * de atalho; F10 (pagamento) fica no painel do total e Esc no cabeçalho.
+ */
+const GRUPOS: { nome: string; botoes: { tecla: string; rotulo: string; perigo?: boolean }[] }[] = [
+  {
+    nome: 'Item',
+    botoes: [
+      { tecla: 'F2', rotulo: 'Buscar produto' },
+      { tecla: 'F5', rotulo: 'Desconto no item' },
+      { tecla: 'F7', rotulo: 'Cancelar item', perigo: true }
+    ]
+  },
+  {
+    nome: 'Venda',
+    botoes: [
+      { tecla: 'F3', rotulo: 'Cliente (fiado)' },
+      { tecla: 'F6', rotulo: 'Desconto na venda' },
+      { tecla: 'F8', rotulo: 'Cancelar venda', perigo: true }
+    ]
+  },
+  {
+    nome: 'Cupom',
+    botoes: [
+      { tecla: 'F11', rotulo: 'Ver último' },
+      { tecla: 'F12', rotulo: 'Reimprimir' },
+      { tecla: 'F9', rotulo: 'Cancelar última', perigo: true }
+    ]
+  }
 ]
 
 /**
@@ -121,6 +138,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
 
   const itens = venda?.itens ?? []
   const temItens = itens.some((i) => !i.cancelado)
+  const itensValidos = itens.filter((i) => !i.cancelado).length
   const item = itens[selecionado] ?? null
 
   // Retoma a venda que estava aberta (inclusive depois de uma queda do PDV).
@@ -312,39 +330,47 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
 
   return (
     <main className="caixa">
-      <div className="caixa-topo">
-        <label className="caixa-codigo">
-          Código (ou quantidade*código)
-          <input
-            ref={campo}
-            value={codigo}
-            inputMode="numeric"
-            autoComplete="off"
-            onChange={(e) => setCodigo(e.target.value)}
-            onBlur={(e) => {
-              // Volta o foco para o leitor, menos quando o operador está editando uma célula.
-              if (!modal && !(e.relatedTarget instanceof HTMLInputElement)) setTimeout(focarCodigo, 0)
-            }}
-          />
-        </label>
-        <nav className="caixa-acoes">
-          {BOTOES.map(([tecla, rotulo]) => (
-            <button
-              key={tecla}
-              className={tecla === 'F10' ? 'primario' : undefined}
-              tabIndex={-1}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => acoes[tecla]!()}
-            >
-              <kbd>{tecla === 'Escape' ? 'Esc' : tecla}</kbd> {rotulo}
-            </button>
-          ))}
-        </nav>
-      </div>
+      <label className="caixa-codigo">
+        <Icone nome="codigo" tamanho={28} />
+        <input
+          ref={campo}
+          value={codigo}
+          inputMode="numeric"
+          autoComplete="off"
+          aria-label="Código (ou quantidade*código)"
+          onChange={(e) => setCodigo(e.target.value)}
+          onBlur={(e) => {
+            // Volta o foco para o leitor, menos quando o operador está editando uma célula.
+            if (!modal && !(e.relatedTarget instanceof HTMLInputElement)) setTimeout(focarCodigo, 0)
+          }}
+        />
+        <span className="caixa-codigo-dica">
+          Bipe ou digite o código · <b>3*código</b> multiplica · Enter lança
+        </span>
+      </label>
+
+      <nav className="caixa-acoes">
+        {GRUPOS.map((g) => (
+          <div key={g.nome} className="caixa-grupo">
+            <span className="caixa-grupo-nome">{g.nome}</span>
+            {g.botoes.map((b) => (
+              <button
+                key={b.tecla}
+                className={b.perigo ? 'acao-perigo' : undefined}
+                tabIndex={-1}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => acoes[b.tecla]!()}
+              >
+                <kbd>{b.tecla}</kbd> {b.rotulo}
+              </button>
+            ))}
+          </div>
+        ))}
+      </nav>
 
       <section className="caixa-itens">
         <div className="tabela-rolagem">
-          <table className="tabela">
+          <table className="tabela tabela-zebra">
             <thead>
               <tr>
                 <th>Nº</th>
@@ -362,9 +388,9 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
                   className={[indice === selecionado && 'selecionada', i.cancelado && 'cancelado'].filter(Boolean).join(' ')}
                   onClick={() => setSelecionado(indice)}
                 >
-                  <td>{i.sequencia}</td>
+                  <td className="caixa-seq">{i.sequencia}</td>
                   <td>
-                    {i.descricao}
+                    <span className="caixa-desc">{i.descricao}</span>
                     {i.tipoPreco === 'promocao' && <span className="etiqueta oferta">oferta</span>}
                     {i.tipoPreco === 'atacado' && <span className="etiqueta oferta">atacado</span>}
                   </td>
@@ -380,7 +406,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
                   <td className="num">{formatarMoeda(i.precoUnitario)}</td>
                   <td className="num">
                     <CelulaEditavel
-                      texto={i.desconto ? `-${formatarMoeda(i.desconto)}` : ''}
+                      texto={i.desconto ? `−${formatarMoeda(i.desconto)}` : ''}
                       inicial={i.desconto ? centavosParaTexto(i.desconto) : ''}
                       editavel={!i.cancelado}
                       onSalvar={(t) => editarDesconto(i, t)}
@@ -392,75 +418,107 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
               ))}
             </tbody>
           </table>
-          {itens.length === 0 && <p className="vazio">Caixa livre. Bipe um produto para começar.</p>}
+          {itens.length === 0 && (
+            <div className="caixa-vazio">
+              <Icone nome="carrinho" tamanho={40} />
+              <strong>Caixa livre</strong>
+              <span>Bipe um produto para começar.</span>
+            </div>
+          )}
         </div>
-        {aviso && <p className={aviso.erro ? 'erro' : 'aviso'}>{aviso.texto}</p>}
+        {aviso ? (
+          <p className={`caixa-aviso ${aviso.erro ? 'caixa-aviso-erro' : ''}`} key={aviso.texto}>
+            <Icone nome={aviso.erro ? 'erro' : 'ok'} />
+            {aviso.texto}
+          </p>
+        ) : (
+          item && (
+            <p className="caixa-aviso caixa-aviso-neutro">
+              {itensValidos} {itensValidos === 1 ? 'item' : 'itens'} · ↑ ↓ escolhe o item
+            </p>
+          )
+        )}
       </section>
 
       <aside className="caixa-painel">
         {finalizada && !venda ? (
-          <div className="caixa-finalizada">
-            <span>Venda nº {finalizada.id} finalizada</span>
-            <div className="linha-total">
-              <span>Total</span>
-              <span>{formatarMoeda(finalizada.total)}</span>
-            </div>
-            {finalizada.pagamentos.map((p) => (
-              <div key={p.id} className="linha-total">
-                <span>{FORMAS_PAGAMENTO[p.forma]}</span>
-                <span>{formatarMoeda(p.valor)}</span>
+          <>
+            <div className="painel-cartao caixa-finalizada">
+              <span className="cartao-rotulo">Venda nº {finalizada.id} finalizada</span>
+              <div className="linha-total">
+                <span>Total</span>
+                <b>{formatarMoeda(finalizada.total)}</b>
               </div>
-            ))}
-            <div className="caixa-troco">
+              {finalizada.pagamentos.map((p) => (
+                <div key={p.id} className="linha-total">
+                  <span>{FORMAS_PAGAMENTO[p.forma]}</span>
+                  <b>{formatarMoeda(p.valor)}</b>
+                </div>
+              ))}
+            </div>
+            <div className="caixa-total caixa-troco">
               <span>Troco</span>
               <strong>{formatarMoeda(finalizada.troco)}</strong>
             </div>
-          </div>
+          </>
         ) : (
           <>
-            <div className="caixa-item">
+            <div className="painel-cartao caixa-item">
+              <span className="cartao-rotulo">Último item</span>
               {item ? (
                 <>
                   <strong>{item.descricao}</strong>
-                  <span>
-                    {qtd(item.quantidade, item.unidade)} × {formatarMoeda(item.precoUnitario)}
-                    {item.desconto > 0 && ` − ${formatarMoeda(item.desconto)}`}
-                  </span>
-                  <span className="caixa-item-total">{formatarMoeda(item.total)}</span>
+                  <div className="caixa-item-linha">
+                    <span>
+                      {qtd(item.quantidade, item.unidade)} × {formatarMoeda(item.precoUnitario)}
+                      {item.desconto > 0 && ` − ${formatarMoeda(item.desconto)}`}
+                    </span>
+                    <b>{formatarMoeda(item.total)}</b>
+                  </div>
                 </>
               ) : (
-                <span className="dica">Nenhum item</span>
+                <span className="dica">Nenhum item ainda</span>
               )}
             </div>
-            <div className="linha-total">
-              <span>Subtotal</span>
-              <span>{formatarMoeda(venda?.subtotal ?? 0)}</span>
-            </div>
-            {(venda?.desconto ?? 0) > 0 && (
+            <div className="painel-cartao caixa-resumo">
               <div className="linha-total">
-                <span>Desconto</span>
-                <span>-{formatarMoeda(venda!.desconto)}</span>
+                <span>Itens</span>
+                <b>{itensValidos}</b>
               </div>
-            )}
+              <div className="linha-total">
+                <span>Subtotal</span>
+                <b>{formatarMoeda(venda?.subtotal ?? 0)}</b>
+              </div>
+              {(venda?.desconto ?? 0) > 0 && (
+                <div className="linha-total caixa-desconto">
+                  <span>Desconto</span>
+                  <b>−{formatarMoeda(venda!.desconto)}</b>
+                </div>
+              )}
+            </div>
             <div className="caixa-total">
-              <span>Total</span>
+              <span>Total a pagar</span>
               <strong>{formatarMoeda(venda?.total ?? 0)}</strong>
             </div>
+            <button
+              className="caixa-pagar"
+              tabIndex={-1}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => acoes['F10']!()}
+            >
+              <kbd>F10</kbd> Pagamento
+            </button>
             {venda?.clienteNome && (
-              <p className="aviso">
-                Cliente: <strong>{venda.clienteNome}</strong>
+              <p className="caixa-cliente">
+                <Icone nome="pessoa" />
+                Cliente: {venda.clienteNome}
               </p>
             )}
           </>
         )}
 
-        {caixa && (
-          <p className="dica">
-            Caixa nº {caixa.id} · {caixa.operador}
-          </p>
-        )}
         <p className="dica caixa-dica">
-          Clique na quantidade ou no desconto de um item para corrigir. Ao sair (Esc), a venda fica salva.
+          Clique na quantidade ou no desconto de um item para corrigir. Esc volta ao início e a venda fica salva.
         </p>
       </aside>
 
