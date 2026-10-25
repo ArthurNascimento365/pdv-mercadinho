@@ -25,8 +25,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   + pet + limpeza nas bases Open Facts).
 - **25/10 — tela Vender reorganizada:** código no topo, barra de botões clicáveis abaixo,
   quantidade e desconto editáveis na lista (`vendas:alterarQuantidade`).
-- Instalador `dist/PDV Mercadinho Setup 0.1.1.exe` gerado em 25/10/2026 (versão 0.1.1, com a
-  tela Vender nova). Schema do banco na versão 7. 292 testes passando (29 arquivos).
+- **25/10 — desconto na venda** com seleção entre porcentagem e valor (R$).
+- Instalador `dist/PDV Mercadinho Setup 0.1.2.exe` gerado em 25/10/2026 (tela Vender nova +
+  desconto %/R$). Schema do banco na versão 7. 292 testes passando (29 arquivos).
 
 ### Em andamento
 
@@ -76,7 +77,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.2.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.3.
 4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
@@ -168,6 +169,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   atalhos, mapa `acoes`). Quantidade e desconto do item se editam com um clique na lista
   (`alterarQuantidade` no main; etiqueta de balança não muda a quantidade). Botões e células
   usam `onMouseDown` com `preventDefault` para o campo de código não roubar o foco do editor.
+  Desconto na venda (F6) abre `DescontoVenda` (Modais.tsx): escolha entre porcentagem (F1) e
+  valor em reais (F2), com prévia do total; vazio ou 0 tira o desconto.
 - Caixa: só se vende com caixa aberto (um por vez). A venda guarda `caixa_id`. Dinheiro
   esperado = fundo + dinheiro das vendas (menos troco) + suprimentos − sangrias. Fechamento é
   cego (contagem de todas as formas antes de ver o esperado) e grava esperado × contado em

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { formatarMoeda } from '@shared/dinheiro'
+import { centavosParaTexto, formatarMoeda, type Centavos } from '@shared/dinheiro'
 import type { Produto } from '@shared/produtos'
+import { lerDesconto } from '@shared/vendas'
 import { mensagemErro, useTeclas } from '../util'
 
 interface PromptProps {
@@ -52,6 +53,144 @@ export function Prompt({ titulo, rotulo, dica, inicial = '', confirmar, onFechar
           <input ref={campo} className="campo-grande" value={texto} onChange={(e) => setTexto(e.target.value)} />
         </label>
         {dica && <p className="dica">{dica}</p>}
+        {erro && <p className="erro">{erro}</p>}
+        <div className="acoes">
+          <span className="espaco" />
+          <button className="secundario" onClick={onFechar}>
+            <kbd>Esc</kbd> Cancelar
+          </button>
+          <button className="primario" onClick={() => void enviar()} disabled={ocupado}>
+            <kbd>Enter</kbd> Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+type TipoDesconto = 'porcentagem' | 'valor'
+
+/** Desconto digitado no tipo escolhido, em centavos; null se inválido. Vazio = 0 (tira o desconto). */
+function lerDescontoDoTipo(tipo: TipoDesconto, texto: string, base: Centavos): Centavos | null {
+  const limpo = texto.trim()
+  if (!limpo) return 0
+  if (tipo === 'valor') return limpo.includes('%') ? null : lerDesconto(limpo, base)
+  return lerDesconto(`${limpo.replace(/%$/, '')}%`, base)
+}
+
+/**
+ * Desconto na venda: o operador escolhe porcentagem (F1) ou valor em reais (F2)
+ * e vê o total com desconto antes de confirmar.
+ */
+export function DescontoVenda({
+  subtotal,
+  descontoAtual,
+  confirmar,
+  onFechar
+}: {
+  subtotal: Centavos
+  descontoAtual: Centavos
+  /** Devolve a mensagem de erro, ou null se deu certo (quem chamou fecha o modal). */
+  confirmar: (desconto: Centavos) => Promise<string | null>
+  onFechar: () => void
+}): React.JSX.Element {
+  const [tipo, setTipo] = useState<TipoDesconto>(descontoAtual > 0 ? 'valor' : 'porcentagem')
+  const [texto, setTexto] = useState(descontoAtual > 0 ? centavosParaTexto(descontoAtual) : '')
+  const [erro, setErro] = useState<string | null>(null)
+  const [ocupado, setOcupado] = useState(false)
+  const campo = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    campo.current?.focus()
+    campo.current?.select()
+  }, [tipo])
+
+  const desconto = lerDescontoDoTipo(tipo, texto, subtotal)
+  const valido = desconto !== null && desconto <= subtotal
+
+  function escolher(novo: TipoDesconto): void {
+    if (novo === tipo) return
+    setTipo(novo)
+    setTexto('')
+    setErro(null)
+  }
+
+  async function enviar(): Promise<void> {
+    if (ocupado) return
+    if (desconto === null) {
+      setErro(tipo === 'porcentagem' ? 'Porcentagem inválida: de 0 a 100 (ex.: 10 ou 7,5)' : 'Valor inválido (ex.: 5,00)')
+      return
+    }
+    if (desconto > subtotal) {
+      setErro(`Desconto maior que a venda (${formatarMoeda(subtotal)})`)
+      return
+    }
+    setOcupado(true)
+    try {
+      const problema = await confirmar(desconto)
+      if (problema) setErro(problema)
+    } catch (e) {
+      setErro(mensagemErro(e))
+    } finally {
+      setOcupado(false)
+    }
+  }
+
+  useTeclas({
+    Escape: onFechar,
+    Enter: () => void enviar(),
+    F1: () => escolher('porcentagem'),
+    F2: () => escolher('valor')
+  })
+
+  return (
+    <div className="fundo-modal">
+      <div className="modal modal-pequeno">
+        <h2>Desconto na venda</h2>
+        <p>Subtotal {formatarMoeda(subtotal)}</p>
+        <div className="tipo-desconto">
+          <button
+            className={tipo === 'porcentagem' ? 'primario' : undefined}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => escolher('porcentagem')}
+          >
+            <kbd>F1</kbd> Porcentagem (%)
+          </button>
+          <button
+            className={tipo === 'valor' ? 'primario' : undefined}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => escolher('valor')}
+          >
+            <kbd>F2</kbd> Valor (R$)
+          </button>
+        </div>
+        <label>
+          {tipo === 'porcentagem' ? 'Porcentagem de desconto' : 'Valor do desconto em reais'}
+          <div className="campo-unidade">
+            {tipo === 'valor' && <span>R$</span>}
+            <input
+              ref={campo}
+              className="campo-grande"
+              inputMode="decimal"
+              value={texto}
+              placeholder={tipo === 'porcentagem' ? '0' : '0,00'}
+              onChange={(e) => {
+                setTexto(e.target.value)
+                setErro(null)
+              }}
+            />
+            {tipo === 'porcentagem' && <span>%</span>}
+          </div>
+        </label>
+        <div className="linha-total">
+          <span>Desconto</span>
+          <span>{valido ? `-${formatarMoeda(desconto)}` : '—'}</span>
+        </div>
+        <div className="linha-total">
+          <strong>Total com desconto</strong>
+          <strong>{valido ? formatarMoeda(subtotal - desconto) : '—'}</strong>
+        </div>
+        <p className="dica">Vazio ou 0 tira o desconto.</p>
         {erro && <p className="erro">{erro}</p>}
         <div className="acoes">
           <span className="espaco" />

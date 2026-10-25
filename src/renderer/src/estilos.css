@@ -387,6 +387,25 @@ button.perigo kbd {
   font-size: 14px;
 }
 
+.tipo-desconto {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tipo-desconto button {
+  justify-content: center;
+  padding: 10px 14px;
+}
+
+.campo-unidade {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 24px;
+  color: var(--texto);
+}
+
 .celula-editavel {
   padding: 2px 8px;
   border: 1px dashed transparent;

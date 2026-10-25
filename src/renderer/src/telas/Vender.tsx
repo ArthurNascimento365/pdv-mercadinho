@@ -5,7 +5,7 @@ import type { Produto } from '@shared/produtos'
 import { FORMAS_PAGAMENTO, lerDesconto, lerEntradaCaixa, type ItemVenda, type Venda } from '@shared/vendas'
 import type { Diagramado } from '@shared/impressao'
 import { BuscaCliente } from '../componentes/Clientes'
-import { BuscaProduto, Confirmar, Prompt } from '../componentes/Modais'
+import { BuscaProduto, Confirmar, DescontoVenda, Prompt } from '../componentes/Modais'
 import { PesoBalanca } from '../componentes/PesoBalanca'
 import { PreviaCupom } from '../componentes/PreviaCupom'
 import { bipeErro, mensagemErro, useTeclas } from '../util'
@@ -522,13 +522,10 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
       )}
 
       {modal?.tipo === 'descontoVenda' && venda && (
-        <Prompt
-          titulo="Desconto na venda"
-          rotulo={`Subtotal ${formatarMoeda(venda.subtotal)}`}
-          dica="Em reais (5,00) ou porcentagem (5%). 0 tira o desconto."
-          confirmar={async (texto) => {
-            const d = lerDesconto(texto, venda.subtotal)
-            if (d === null) return 'Desconto inválido'
+        <DescontoVenda
+          subtotal={venda.subtotal}
+          descontoAtual={venda.desconto}
+          confirmar={async (d) => {
             atualizar(await window.pdv.vendas.descontoVenda(d), false)
             setModal(null)
             return null
