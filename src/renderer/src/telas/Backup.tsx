@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { backupAtrasado, type EstadoBackup, type InfoBackupValido, type MotivoBackup } from '@shared/backup'
+import { Icone } from '../componentes/Icone'
 import { Confirmar } from '../componentes/Modais'
 import { mensagemErro, useTeclas } from '../util'
 
@@ -114,40 +115,41 @@ export function Backup({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   const atrasado = backupAtrasado(ultimo)
 
   return (
-    <main className="pagina pagina-estreita">
+    <main className="pagina pagina-media">
       <div className="barra">
         <h2>Backup</h2>
         <span className="espaco" />
         <button className="primario" onClick={() => void fazer()} disabled={ocupado}>
           <kbd>F5</kbd> {ocupado ? 'Trabalhando…' : 'Fazer backup agora'}
         </button>
-        <button onClick={onVoltar}>
-          <kbd>Esc</kbd> Voltar
-        </button>
       </div>
 
       {aviso && <p className="aviso">{aviso}</p>}
       {erro && <p className="erro">{erro}</p>}
 
+      <div className="secoes-colunas">
       <section className="secao">
         <h3>Último backup</h3>
         {ultimo ? (
           <>
-            <p className={atrasado ? 'erro' : 'aviso'}>
-              {ultimo.ok ? 'Feito' : 'FALHOU'} em {dataHora(ultimo.quando)} ({MOTIVOS[ultimo.motivo]})
+            <p className={`resultado-fechamento ${!ultimo.ok ? 'resultado-falta' : atrasado ? 'resultado-falta' : 'resultado-ok'}`}>
+              {ultimo.ok ? 'Feito' : 'Falhou'} em {dataHora(ultimo.quando)} ({MOTIVOS[ultimo.motivo]})
               {atrasado && ultimo.ok && ' — há mais de 24 horas'}
             </p>
-            <ul className="lista-simples">
+            <ul className="lista-destinos">
               {ultimo.destinos.map((d) => (
-                <li key={d.pasta}>
-                  <span className={d.ok ? 'ok' : 'baixo'}>{d.ok ? '✓' : '✗'}</span> {d.pasta}
-                  {d.erro && <span className="baixo"> — {d.erro}</span>}
+                <li key={d.pasta} className={d.ok ? 'destino-ok' : 'destino-falha'}>
+                  <Icone nome={d.ok ? 'ok' : 'erro'} tamanho={18} />
+                  <span>
+                    <span className="caminho-arquivo">{d.pasta}</span>
+                    {d.erro && <span className="baixo"> — {d.erro}</span>}
+                  </span>
                 </li>
               ))}
             </ul>
           </>
         ) : (
-          <p className="erro">Nenhum backup feito ainda. Tecle F5.</p>
+          <p className="resultado-fechamento resultado-falta">Nenhum backup feito ainda. Tecle F5.</p>
         )}
         <p className="dica">
           Automático a cada{' '}
@@ -169,16 +171,24 @@ export function Backup({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
 
       <section className="secao">
         <h3>Onde guardar</h3>
-        <ul className="lista-simples">
+        <ul className="lista-destinos">
           <li>
-            <strong>Principal:</strong> {estado.pastaPrincipal}
+            <Icone nome="nuvem" tamanho={18} />
+            <span>
+              <strong>Principal</strong>
+              <br />
+              <span className="caminho-arquivo">{estado.pastaPrincipal}</span>
+            </span>
           </li>
           {estado.config.pastasExtras.map((p) => (
             <li key={p}>
-              {p}{' '}
-              <button className="link" onClick={() => void removerPasta(p)}>
-                remover
-              </button>
+              <Icone nome="nuvem" tamanho={18} />
+              <span>
+                <span className="caminho-arquivo">{p}</span>{' '}
+                <button className="link" onClick={() => void removerPasta(p)}>
+                  remover
+                </button>
+              </span>
             </li>
           ))}
         </ul>
@@ -232,13 +242,14 @@ export function Backup({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
           </button>
         </div>
       </section>
+      </div>
 
       {restaurar && (
         <Confirmar
           titulo="Restaurar este backup?"
           mensagem={
             <>
-              <p className="codigo">{restaurar.caminho}</p>
+              <p className="caminho-arquivo">{restaurar.caminho}</p>
               <p>
                 Backup íntegro: {restaurar.produtos} produtos, {restaurar.vendas} vendas, última venda em{' '}
                 {dataHora(restaurar.ultimaVenda)}.

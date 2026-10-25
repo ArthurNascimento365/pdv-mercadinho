@@ -207,14 +207,71 @@ code {
 .pagina {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--e-3);
   min-height: 0;
-  padding: 20px 32px;
+  padding: var(--e-5) var(--e-6);
 }
 
 .pagina-estreita {
-  max-width: 900px;
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
   overflow-y: auto;
+}
+
+/* Seções em duas colunas quando cabem (Configurações, Backup) */
+.secoes-colunas {
+  columns: 2 440px;
+  column-gap: var(--e-4);
+}
+
+.secoes-colunas > * {
+  break-inside: avoid;
+  margin-bottom: var(--e-4);
+}
+
+/* Barra que fica no topo enquanto a página rola (ex.: F10 Salvar) */
+.barra-fixa {
+  position: sticky;
+  top: calc(-1 * var(--e-5));
+  z-index: 2;
+  margin: calc(-1 * var(--e-5)) calc(-1 * var(--e-6)) 0;
+  padding: var(--e-4) var(--e-6);
+  border-bottom: 1px solid var(--borda);
+  background: var(--fundo);
+}
+
+.caminho-arquivo {
+  font-family: var(--fonte-codigo);
+  font-size: var(--fs-1);
+  color: var(--texto-suave);
+  overflow-wrap: anywhere;
+}
+
+.lista-destinos {
+  display: grid;
+  gap: var(--e-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-destinos li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-2);
+}
+
+.lista-destinos .icone {
+  margin-top: 1px;
+}
+
+.destino-ok {
+  color: var(--sucesso);
+}
+
+.destino-falha {
+  color: var(--perigo);
 }
 
 .pagina-media {
@@ -532,15 +589,17 @@ p.erro {
 
 .secao {
   display: grid;
-  gap: 12px;
-  padding: 16px 20px;
+  gap: var(--e-3);
+  padding: var(--e-4) var(--e-5);
   border: 1px solid var(--borda);
-  border-radius: 8px;
+  border-radius: var(--r-2);
   background: var(--superficie);
+  box-shadow: var(--sombra-1);
 }
 
 .secao h3 {
   margin: 0;
+  font-size: var(--fs-4);
 }
 
 .secao p {

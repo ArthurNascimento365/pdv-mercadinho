@@ -99,21 +99,18 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
   if (!formato || !impressora || !balancaSerial || !pix) return <main className="pagina">{erro && <p className="erro">{erro}</p>}</main>
 
   return (
-    <main className="pagina pagina-estreita">
-      <div className="barra">
+    <main className="pagina pagina-media">
+      <div className="barra barra-fixa">
         <h2>Configurações</h2>
+        {aviso && <p className="aviso">{aviso}</p>}
+        {erro && <p className="erro">{erro}</p>}
         <span className="espaco" />
-        <button onClick={onVoltar}>
-          <kbd>Esc</kbd> Voltar
-        </button>
         <button className="primario" onClick={() => void salvar()}>
           <kbd>F10</kbd> Salvar
         </button>
       </div>
 
-      {aviso && <p className="aviso">{aviso}</p>}
-      {erro && <p className="erro">{erro}</p>}
-
+      <div className="secoes-colunas">
       <section className="secao">
         <h3>Loja</h3>
         <label>
@@ -231,6 +228,7 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
         salvar={salvar}
         onPrevia={setPrevia}
       />
+      </div>
 
       {previa && <PreviaCupom titulo="Cupom de teste" documento={previa} onFechar={() => setPrevia(null)} />}
     </main>
