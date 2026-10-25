@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { formatarMoeda, quantidadeParaTexto } from '@shared/dinheiro'
 import { noEstoqueMinimo } from '@shared/estoque'
 import type { Produto } from '@shared/produtos'
+import { Icone } from '../componentes/Icone'
 import { mensagemErro, useTeclas } from '../util'
 import { hojeLocal, precoTabela, promocaoAtiva } from '@shared/precos'
 import { Etiquetas } from './Etiquetas'
@@ -81,13 +82,15 @@ export function Produtos({ onVoltar }: { onVoltar: () => void }): React.JSX.Elem
     <main className="pagina">
       <div className="barra">
         <h2>Produtos</h2>
-        <input
-          ref={busca}
-          className="busca"
-          placeholder="Buscar por descrição, EAN ou código da balança"
-          value={termo}
-          onChange={(e) => setTermo(e.target.value)}
-        />
+        <label className="campo-busca">
+          <Icone nome="busca" />
+          <input
+            ref={busca}
+            placeholder="Buscar por descrição, EAN ou código da balança"
+            value={termo}
+            onChange={(e) => setTermo(e.target.value)}
+          />
+        </label>
         <label className="opcao">
           <input
             type="checkbox"
@@ -96,17 +99,14 @@ export function Produtos({ onVoltar }: { onVoltar: () => void }): React.JSX.Elem
           />
           Mostrar inativos
         </label>
-        <button onClick={() => setEditando('novo')}>
-          <kbd>F2</kbd> Novo
-        </button>
         <button onClick={() => setImportando(true)}>
           <kbd>F4</kbd> Importar CSV
         </button>
         <button onClick={() => setEtiquetas(true)}>
           <kbd>F6</kbd> Etiquetas
         </button>
-        <button onClick={onVoltar}>
-          <kbd>Esc</kbd> Voltar
+        <button className="primario" onClick={() => setEditando('novo')}>
+          <kbd>F2</kbd> Novo produto
         </button>
       </div>
 
@@ -157,7 +157,12 @@ export function Produtos({ onVoltar }: { onVoltar: () => void }): React.JSX.Elem
         )}
       </div>
 
-      <p className="dica">↑ ↓ escolhe · Enter edita · F2 novo · F4 importar · F6 etiquetas de gôndola · Esc volta</p>
+      <p className="dica rodape-lista">
+        <span>
+          {lista.length} {lista.length === 1 ? 'produto' : 'produtos'}
+        </span>
+        ↑ ↓ escolhe · Enter edita · F2 novo · F4 importar · F6 etiquetas de gôndola · Esc volta
+      </p>
 
       {editando !== null && (
         <FormProduto

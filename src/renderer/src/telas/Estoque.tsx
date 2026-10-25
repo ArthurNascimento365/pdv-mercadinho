@@ -135,21 +135,26 @@ export function Estoque({ onVoltar, abaInicial = 'minimo' }: { onVoltar: () => v
     <main className="pagina">
       <div className="barra">
         <h2>Estoque e entrada</h2>
-        {ABAS.map((a) => (
-          <button key={a.aba} className={a.aba === aba ? 'primario' : ''} onClick={() => setAba(a.aba)}>
-            <kbd>{a.tecla}</kbd> {a.nome}
-            {a.aba === 'minimo' && ` (${minimo.length})`}
-          </button>
-        ))}
+        <div className="abas" role="tablist">
+          {ABAS.map((a) => (
+            <button
+              key={a.aba}
+              role="tab"
+              aria-selected={a.aba === aba}
+              className={a.aba === aba ? 'aba-ativa' : ''}
+              onClick={() => setAba(a.aba)}
+            >
+              <kbd>{a.tecla}</kbd> {a.nome}
+              {a.aba === 'minimo' && minimo.length > 0 && <span className="contador">{minimo.length}</span>}
+            </button>
+          ))}
+        </div>
         <span className="espaco" />
         <button onClick={() => setManual(true)}>
           <kbd>F5</kbd> Entrada manual
         </button>
-        <button onClick={() => void importarXml()}>
+        <button className="primario" onClick={() => void importarXml()}>
           <kbd>F4</kbd> Entrada por XML
-        </button>
-        <button onClick={onVoltar}>
-          <kbd>Esc</kbd> Voltar
         </button>
       </div>
 

@@ -3,9 +3,17 @@ import { centavosParaTexto, formatarMoeda, lerMoeda } from '@shared/dinheiro'
 import type { Cliente, ExtratoCliente } from '@shared/fiado'
 import { FORMAS_PAGAMENTO, type FormaContavel } from '@shared/vendas'
 import { FormCliente, situacaoCliente } from '../componentes/Clientes'
+import { Icone } from '../componentes/Icone'
 import { mensagemErro, useTeclas } from '../util'
 
 const data = (iso: string): string => new Date(iso).toLocaleDateString('pt-BR')
+
+/** Telefone guardado só com dígitos, exibido como (11) 98765-4321. */
+function telefone(digitos: string | null): string {
+  if (!digitos) return ''
+  const m = /^(\d{2})(\d{4,5})(\d{4})$/.exec(digitos)
+  return m ? `(${m[1]}) ${m[2]}-${m[3]}` : digitos
+}
 const TIPOS = { compra: 'Compra', pagamento: 'Pagamento', estorno: 'Estorno (venda cancelada)' }
 
 export function Fiado({ onVoltar }: { onVoltar: () => void }): React.JSX.Element {
@@ -68,21 +76,20 @@ export function Fiado({ onVoltar }: { onVoltar: () => void }): React.JSX.Element
     <main className="pagina">
       <div className="barra">
         <h2>Fiado</h2>
-        <input
-          ref={busca}
-          className="busca"
-          placeholder="Buscar cliente por nome ou telefone"
-          value={termo}
-          onChange={(e) => setTermo(e.target.value)}
-        />
-        <button className={soDevedores ? 'primario' : ''} onClick={() => setSoDevedores((v) => !v)}>
+        <label className="campo-busca">
+          <Icone nome="busca" />
+          <input
+            ref={busca}
+            placeholder="Buscar cliente por nome ou telefone"
+            value={termo}
+            onChange={(e) => setTermo(e.target.value)}
+          />
+        </label>
+        <button className={soDevedores ? 'filtro-ativo' : ''} onClick={() => setSoDevedores((v) => !v)}>
           <kbd>F6</kbd> Só quem deve
         </button>
-        <button onClick={() => setEditando('novo')}>
+        <button className="primario" onClick={() => setEditando('novo')}>
           <kbd>F2</kbd> Novo cliente
-        </button>
-        <button onClick={onVoltar}>
-          <kbd>Esc</kbd> Voltar
         </button>
       </div>
       {erro && <p className="erro">{erro}</p>}
@@ -113,7 +120,7 @@ export function Fiado({ onVoltar }: { onVoltar: () => void }): React.JSX.Element
                     {c.nome}
                     {!c.ativo && <span className="etiqueta">inativo</span>}
                   </td>
-                  <td className="codigo">{c.telefone ?? ''}</td>
+                  <td>{telefone(c.telefone)}</td>
                   <td className="num">{c.diaAcerto ? `dia ${c.diaAcerto}` : ''}</td>
                   <td className="num">{formatarMoeda(c.limite)}</td>
                   <td className={`num ${c.saldo > 0 ? 'baixo' : ''}`}>{formatarMoeda(c.saldo)}</td>
@@ -123,11 +130,17 @@ export function Fiado({ onVoltar }: { onVoltar: () => void }): React.JSX.Element
             })}
           </tbody>
         </table>
-        {lista.length === 0 && <p className="vazio">Nenhum cliente. F2 cadastra.</p>}
+        {lista.length === 0 && (
+          <p className="vazio">
+            {soDevedores ? 'Ninguém deve no momento. F6 mostra todos.' : termo ? 'Nada encontrado.' : 'Nenhum cliente. F2 cadastra.'}
+          </p>
+        )}
       </div>
-      <p className="dica">
-        Total a receber nesta lista: <strong>{formatarMoeda(totalDevido)}</strong> · Enter abre o extrato · F2 novo · F6
-        só quem deve
+      <p className="dica rodape-lista">
+        <span>
+          Total a receber nesta lista: <strong className={totalDevido > 0 ? 'baixo' : ''}>{formatarMoeda(totalDevido)}</strong>
+        </span>
+        ↑ ↓ escolhe · Enter abre o extrato · F2 novo · F6 só quem deve · Esc volta
       </p>
 
       {editando !== null && (
@@ -234,7 +247,7 @@ function Extrato({
           </div>
           <div className="cartao">
             <span>Telefone</span>
-            <strong className="codigo">{cliente.telefone ?? '—'}</strong>
+            <strong>{telefone(cliente.telefone) || '—'}</strong>
             <small>{cliente.observacao ?? ''}</small>
           </div>
         </div>

@@ -247,9 +247,91 @@ code {
   margin: 0;
 }
 
-.busca {
+/* Campo de busca das listas: ícone dentro do campo */
+.campo-busca {
+  display: flex;
   flex: 1;
-  font-size: 18px;
+  align-items: center;
+  gap: var(--e-2);
+  min-width: 240px;
+  min-height: 44px;
+  padding: 0 var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--r-2);
+  background: var(--superficie);
+  color: var(--texto-fraco);
+}
+
+.campo-busca:focus-within {
+  border-color: var(--marca-600);
+  box-shadow: var(--foco);
+}
+
+.campo-busca input {
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: var(--fs-4);
+}
+
+.campo-busca input:focus {
+  outline: none;
+}
+
+/* Abas (Estoque): botões juntos, a ativa em destaque */
+.abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r-2);
+  background: var(--borda);
+}
+
+.abas button {
+  border-color: transparent;
+  background: transparent;
+  color: var(--texto-suave);
+}
+
+.abas button:hover {
+  background: var(--superficie-2);
+}
+
+.abas button.aba-ativa {
+  background: var(--superficie);
+  color: var(--texto);
+  font-weight: 600;
+  box-shadow: var(--sombra-1);
+}
+
+.contador {
+  min-width: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--alerta-fundo);
+  color: var(--alerta);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Botão de filtro ligado (ex.: "Só quem deve") */
+button.filtro-ativo {
+  border-color: var(--marca-600);
+  background: var(--sucesso-fundo);
+  color: var(--sucesso);
+  font-weight: 600;
+}
+
+.rodape-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2) var(--e-5);
+}
+
+.rodape-lista span {
+  color: var(--texto);
 }
 
 .opcao {
@@ -263,13 +345,18 @@ code {
   flex: 1;
 }
 
+/*
+ * Listas: cabeçalho fixo, linhas alternadas, linha escolhida com barra verde à esquerda.
+ * Vale para todas as tabelas do sistema.
+ */
 .tabela-rolagem {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   border: 1px solid var(--borda);
-  border-radius: 8px;
+  border-radius: var(--r-2);
   background: var(--superficie);
+  box-shadow: var(--sombra-1);
 }
 
 .tabela {
@@ -280,30 +367,46 @@ code {
 .tabela th {
   position: sticky;
   top: 0;
-  padding: 8px 12px;
+  z-index: 1;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--borda);
-  background: var(--fundo);
-  font-size: 13px;
-  font-weight: 600;
+  background: var(--superficie-2);
+  color: var(--texto-fraco);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
   text-align: left;
-  color: var(--texto-suave);
+  text-transform: uppercase;
 }
 
 .tabela td {
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--fundo);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--borda);
 }
 
 .tabela tbody tr {
   cursor: default;
 }
 
-.tabela tr.selecionada td {
+.tabela tbody tr:nth-child(even) td {
+  background: var(--linha-par);
+}
+
+.tabela tbody tr:hover td {
+  background: var(--superficie-2);
+}
+
+.tabela tr.selecionada td,
+.tabela tr.selecionada:hover td {
   background: var(--selecao);
 }
 
+.tabela tr.selecionada td:first-child {
+  box-shadow: inset 4px 0 0 var(--marca-600);
+}
+
 .tabela tr.inativo td {
-  color: var(--texto-suave);
+  color: var(--texto-fraco);
 }
 
 .num {
@@ -312,33 +415,35 @@ code {
 }
 
 .codigo {
-  font-family: Consolas, monospace;
-  font-size: 14px;
+  font-family: var(--fonte-codigo);
+  font-size: var(--fs-2);
   color: var(--texto-suave);
 }
 
 .baixo {
-  color: var(--erro);
+  color: var(--perigo);
   font-weight: 600;
 }
 
 .etiqueta {
-  margin-left: 8px;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: var(--fundo);
+  margin-left: var(--e-2);
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--superficie-2);
+  color: var(--texto-suave);
   font-size: 12px;
+  font-weight: 600;
 }
 
 .vazio,
 .dica {
   margin: 0;
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--fs-2);
 }
 
 .vazio {
-  padding: 24px;
+  padding: var(--e-6) var(--e-5);
   text-align: center;
 }
 
@@ -577,33 +682,11 @@ button.acao-perigo kbd {
 .caixa-itens .tabela-rolagem {
   border: none;
   border-radius: 0;
-}
-
-.caixa-itens .tabela th {
-  padding: 10px 14px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: var(--texto-fraco);
+  box-shadow: none;
 }
 
 .caixa-itens .tabela td {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--borda);
   font-size: 17px;
-}
-
-.tabela-zebra tbody tr:nth-child(even) td {
-  background: var(--linha-par);
-}
-
-.caixa-itens .tabela tr.selecionada td {
-  background: var(--selecao);
-}
-
-.caixa-itens .tabela tr.selecionada td:first-child {
-  box-shadow: inset 4px 0 0 var(--marca-600);
 }
 
 .caixa-itens tbody tr {
@@ -1299,8 +1382,8 @@ button.acao-perigo kbd {
 }
 
 .etiqueta.oferta {
-  background: var(--perigo-fundo);
-  color: var(--erro);
+  background: var(--alerta-fundo);
+  color: var(--alerta);
 }
 
 .sobra {
@@ -1322,7 +1405,7 @@ button.acao-perigo kbd {
 }
 
 .tabela .codigo {
-  font-size: 12px;
+  font-size: var(--fs-1);
 }
 
 textarea {

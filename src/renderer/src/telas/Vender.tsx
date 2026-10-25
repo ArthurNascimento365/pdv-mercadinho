@@ -370,7 +370,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
 
       <section className="caixa-itens">
         <div className="tabela-rolagem">
-          <table className="tabela tabela-zebra">
+          <table className="tabela">
             <thead>
               <tr>
                 <th>Nº</th>

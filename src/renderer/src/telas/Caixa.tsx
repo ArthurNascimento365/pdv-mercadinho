@@ -153,7 +153,7 @@ export function Caixa({ onVoltar }: { onVoltar: () => void }): React.JSX.Element
         {caixa.movimentos.length === 0 ? (
           <p className="dica">Nenhum movimento neste caixa.</p>
         ) : (
-          <table className="tabela tabela-zebra">
+          <table className="tabela">
             <tbody>
               {caixa.movimentos.map((m) => (
                 <tr key={m.id}>
@@ -269,7 +269,7 @@ function AbrirCaixa({
       {historico.length > 0 && (
         <section className="secao">
           <h3>Últimos fechamentos</h3>
-          <table className="tabela tabela-zebra">
+          <table className="tabela">
             <thead>
               <tr>
                 <th>Nº</th>
@@ -493,7 +493,7 @@ function RelatorioFechamento({
               ? `Falta de ${formatarMoeda(-diferenca)} no caixa.`
               : `Sobra de ${formatarMoeda(diferenca)} no caixa.`}
         </p>
-        <table className="tabela tabela-zebra">
+        <table className="tabela">
           <thead>
             <tr>
               <th>Forma</th>
