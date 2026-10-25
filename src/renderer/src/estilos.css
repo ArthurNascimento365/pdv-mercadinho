@@ -40,6 +40,10 @@
   --linha-par: #fafbfc;
   --selecao: #e3f2ea;
   --foco: 0 0 0 3px rgb(18 137 95 / 0.35);
+  /* Papel: cupom e QR do Pix continuam claros em qualquer tema */
+  --papel: #fffef8;
+  --papel-qr: #ffffff;
+  --tinta: #111111;
 
   /* Tipografia */
   --fs-1: 13px;
@@ -134,7 +138,7 @@ button:disabled {
 button.primario {
   border-color: var(--destaque);
   background: var(--destaque);
-  color: #fff;
+  color: var(--sobre-marca);
 }
 
 button.primario kbd {
@@ -213,14 +217,34 @@ code {
   overflow-y: auto;
 }
 
+.pagina-media {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  overflow-y: auto;
+}
+
 .barra {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
 
 .barra h2 {
   margin: 0 12px 0 0;
+  white-space: nowrap;
+}
+
+.barra-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2) var(--e-3);
+}
+
+.barra-titulo h2 {
+  margin: 0;
 }
 
 .busca {
@@ -329,7 +353,7 @@ p.erro {
   margin: 0;
   padding: 8px 12px;
   border-radius: 6px;
-  background: #fdecea;
+  background: var(--perigo-fundo);
 }
 
 .fundo-modal {
@@ -392,7 +416,7 @@ p.erro {
   overflow-y: auto;
   padding: 8px 12px;
   border-radius: 6px;
-  background: #fdecea;
+  background: var(--perigo-fundo);
   color: var(--erro);
   font-size: 14px;
 }
@@ -426,7 +450,7 @@ p.erro {
 button.perigo {
   border-color: var(--erro);
   background: var(--erro);
-  color: #fff;
+  color: var(--sobre-marca);
 }
 
 button.perigo kbd {
@@ -1126,38 +1150,95 @@ button.acao-perigo kbd {
 }
 
 /* Caixa */
-.selo-aberto {
+.selo-aberto,
+.selo-fechado {
   padding: 2px 10px;
   border-radius: 999px;
-  background: var(--aviso-fundo);
-  color: var(--destaque);
-  font-size: 14px;
+  background: var(--sucesso-fundo);
+  color: var(--sucesso);
+  font-size: var(--fs-2);
   font-weight: 600;
+}
+
+.selo-fechado {
+  background: var(--perigo-fundo);
+  color: var(--perigo);
 }
 
 .cartoes {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: var(--e-3);
+}
+
+.cartoes-caixa {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 
 .cartao {
   display: grid;
+  align-content: start;
   gap: 2px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  background: var(--fundo);
+  padding: var(--e-3) var(--e-4);
+  border: 1px solid var(--borda);
+  border-radius: var(--r-2);
+  background: var(--superficie);
 }
 
 .cartao span,
 .cartao small {
   color: var(--texto-suave);
-  font-size: 13px;
+  font-size: var(--fs-1);
 }
 
 .cartao strong {
-  font-size: 22px;
+  font-size: var(--fs-5);
   font-variant-numeric: tabular-nums;
+}
+
+.cartao-destaque {
+  grid-column: span 2;
+  border-color: var(--marca-700);
+  background: var(--marca-700);
+  color: var(--sobre-marca);
+}
+
+.cartao-destaque span,
+.cartao-destaque small {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.cartao-destaque strong {
+  font-size: var(--fs-6);
+}
+
+.secao-destaque {
+  border-color: var(--marca-600);
+  box-shadow: var(--foco);
+}
+
+.resultado-fechamento {
+  margin: 0;
+  padding: var(--e-3) var(--e-4);
+  border-radius: var(--r-2);
+  font-size: var(--fs-4);
+  font-weight: 700;
+}
+
+.resultado-ok {
+  background: var(--sucesso-fundo);
+  color: var(--sucesso);
+}
+
+.resultado-falta {
+  background: var(--perigo-fundo);
+  color: var(--perigo);
+}
+
+.resultado-sobra {
+  background: var(--info-fundo);
+  color: var(--info);
 }
 
 .cartoes-relatorio {
@@ -1169,7 +1250,7 @@ button.acao-perigo kbd {
 }
 
 .atencao {
-  color: #b45309;
+  color: var(--alerta);
   font-weight: 600;
 }
 
@@ -1218,12 +1299,12 @@ button.acao-perigo kbd {
 }
 
 .etiqueta.oferta {
-  background: #fdecea;
+  background: var(--perigo-fundo);
   color: var(--erro);
 }
 
 .sobra {
-  color: #1d4ed8;
+  color: var(--info);
   font-weight: 600;
 }
 
@@ -1291,7 +1372,7 @@ textarea {
   flex: none;
   width: 180px;
   height: 180px;
-  background: #fff;
+  background: var(--papel-qr);
 }
 
 .qr svg {
@@ -1317,9 +1398,9 @@ textarea {
   overflow-y: auto;
   padding: 14px 2ch;
   border: 1px solid var(--borda);
-  background: #fffef8;
+  background: var(--papel);
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.08);
-  color: #111;
+  color: var(--tinta);
   font-family: Consolas, 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.35;

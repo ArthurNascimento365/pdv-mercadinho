@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import type { Contagem, ResumoCaixa } from '@shared/caixa'
 import { formatarMoeda, lerMoeda } from '@shared/dinheiro'
 import { FORMAS_CONTAVEIS, FORMAS_PAGAMENTO, type FormaContavel } from '@shared/vendas'
+import { EVENTO_CAIXA } from '../App'
 import { mensagemErro, useTeclas } from '../util'
 
 const FORMAS = FORMAS_CONTAVEIS
+
+const plural = (n: number, um: string, varios: string): string => `${n} ${n === 1 ? um : varios}`
 
 const dataHora = (iso: string | null): string =>
   iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—'
@@ -56,6 +59,11 @@ export function Caixa({ onVoltar }: { onVoltar: () => void }): React.JSX.Element
     if (caixa === null) window.pdv.caixa.listar().then(setHistorico).catch(() => setHistorico([]))
   }, [caixa])
 
+  // Cabeçalho mostra o caixa aberto: avisa quando ele abre ou fecha.
+  useEffect(() => {
+    window.dispatchEvent(new Event(EVENTO_CAIXA))
+  }, [caixa?.id, fechado])
+
   useTeclas(
     {
       Escape: onVoltar,
@@ -88,10 +96,15 @@ export function Caixa({ onVoltar }: { onVoltar: () => void }): React.JSX.Element
   }
 
   return (
-    <main className="pagina pagina-estreita">
+    <main className="pagina pagina-media">
       <div className="barra">
-        <h2>Caixa nº {caixa.id}</h2>
-        <span className="selo-aberto">aberto</span>
+        <div className="barra-titulo">
+          <h2>Caixa nº {caixa.id}</h2>
+          <span className="selo-aberto">aberto</span>
+          <span className="dica">
+            {caixa.operador} · desde {dataHora(caixa.abertoEm)} · fundo {formatarMoeda(caixa.fundoTroco)}
+          </span>
+        </div>
         <span className="espaco" />
         <button onClick={() => setModal({ tipo: 'sangria' })}>
           <kbd>F5</kbd> Sangria
@@ -105,52 +118,42 @@ export function Caixa({ onVoltar }: { onVoltar: () => void }): React.JSX.Element
         <button className="primario" onClick={() => setModal({ tipo: 'fechar' })}>
           <kbd>F10</kbd> Fechar caixa
         </button>
-        <button onClick={onVoltar}>
-          <kbd>Esc</kbd> Voltar
-        </button>
       </div>
       {aviso && <p className="aviso">{aviso}</p>}
       {erro && <p className="erro">{erro}</p>}
 
-      <section className="secao">
-        <p>
-          Operador <strong>{caixa.operador}</strong> · aberto em {dataHora(caixa.abertoEm)} · fundo de troco{' '}
-          {formatarMoeda(caixa.fundoTroco)}
-        </p>
-        <div className="cartoes">
-          <div className="cartao">
-            <span>Vendas</span>
-            <strong>{caixa.vendas.quantidade}</strong>
-            <small>{caixa.vendas.canceladas} canceladas</small>
-          </div>
-          <div className="cartao">
-            <span>Total vendido</span>
-            <strong>{formatarMoeda(caixa.vendas.total)}</strong>
-          </div>
-          {FORMAS.map((f) => (
-            <div key={f} className="cartao">
-              <span>{FORMAS_PAGAMENTO[f]}</span>
-              <strong>{formatarMoeda(caixa.recebido[f])}</strong>
-            </div>
-          ))}
-          <div className="cartao">
-            <span>Vendido no fiado</span>
-            <strong>{formatarMoeda(caixa.vendidoFiado)}</strong>
-            <small>recebido de fiado: {formatarMoeda(caixa.recebimentosFiado)}</small>
-          </div>
+      <div className="cartoes cartoes-caixa">
+        <div className="cartao cartao-destaque">
+          <span>Total vendido</span>
+          <strong>{formatarMoeda(caixa.vendas.total)}</strong>
+          <small>
+            {plural(caixa.vendas.quantidade, 'venda', 'vendas')} ·{' '}
+            {plural(caixa.vendas.canceladas, 'cancelada', 'canceladas')}
+          </small>
         </div>
-        <p className="dica">
-          Dinheiro na gaveta (fundo + vendas + suprimentos − sangrias) aparece só no fechamento: o operador conta
-          antes de ver o esperado.
-        </p>
-      </section>
+        {FORMAS.map((f) => (
+          <div key={f} className="cartao">
+            <span>{FORMAS_PAGAMENTO[f]}</span>
+            <strong>{formatarMoeda(caixa.recebido[f])}</strong>
+          </div>
+        ))}
+        <div className="cartao">
+          <span>Vendido no fiado</span>
+          <strong>{formatarMoeda(caixa.vendidoFiado)}</strong>
+          <small>recebido de fiado: {formatarMoeda(caixa.recebimentosFiado)}</small>
+        </div>
+      </div>
+      <p className="dica">
+        O dinheiro esperado na gaveta (fundo + vendas + suprimentos − sangrias) só aparece no fechamento: quem fecha
+        conta antes de ver o esperado.
+      </p>
 
       <section className="secao">
         <h3>Sangrias e suprimentos</h3>
         {caixa.movimentos.length === 0 ? (
           <p className="dica">Nenhum movimento neste caixa.</p>
         ) : (
-          <table className="tabela">
+          <table className="tabela tabela-zebra">
             <tbody>
               {caixa.movimentos.map((m) => (
                 <tr key={m.id}>
@@ -233,17 +236,17 @@ function AbrirCaixa({
   useTeclas({ Escape: onVoltar, F10: () => void abrir(), Enter: () => void abrir() })
 
   return (
-    <main className="pagina pagina-estreita">
+    <main className="pagina pagina-media">
       <div className="barra">
-        <h2>Caixa fechado</h2>
-        <span className="espaco" />
-        <button onClick={onVoltar}>
-          <kbd>Esc</kbd> Voltar
-        </button>
+        <div className="barra-titulo">
+          <h2>Caixa fechado</h2>
+          <span className="selo-fechado">fechado</span>
+        </div>
       </div>
 
-      <section className="secao" onKeyDown={proximoCampo}>
+      <section className="secao secao-destaque" onKeyDown={proximoCampo}>
         <h3>Abrir caixa</h3>
+        <p className="dica">Informe quem vai operar e quanto há de troco na gaveta. Enter passa para o próximo campo.</p>
         <div className="grade">
           <label>
             Operador
@@ -266,7 +269,7 @@ function AbrirCaixa({
       {historico.length > 0 && (
         <section className="secao">
           <h3>Últimos fechamentos</h3>
-          <table className="tabela">
+          <table className="tabela tabela-zebra">
             <thead>
               <tr>
                 <th>Nº</th>
@@ -459,9 +462,11 @@ function RelatorioFechamento({
   const diferenca = linhas.reduce((s, l) => s + l.diferenca, 0)
 
   return (
-    <main className="pagina pagina-estreita">
+    <main className="pagina pagina-media">
       <div className="barra">
-        <h2>Fechamento do caixa nº {caixa.id}</h2>
+        <div className="barra-titulo">
+          <h2>Fechamento do caixa nº {caixa.id}</h2>
+        </div>
         <span className="espaco" />
         <button onClick={onImprimir}>
           <kbd>F12</kbd> Imprimir
@@ -473,14 +478,22 @@ function RelatorioFechamento({
       {erro && <p className="erro">{erro}</p>}
       <section className="secao">
         <p>
-          {caixa.operador} · {dataHora(caixa.abertoEm)} até {dataHora(caixa.fechadoEm)} · {caixa.vendas.quantidade}{' '}
-          vendas ({formatarMoeda(caixa.vendas.total)}) · {caixa.vendas.canceladas} canceladas
+          {caixa.operador} · {dataHora(caixa.abertoEm)} até {dataHora(caixa.fechadoEm)} ·{' '}
+          {plural(caixa.vendas.quantidade, 'venda', 'vendas')} ({formatarMoeda(caixa.vendas.total)}) ·{' '}
+          {plural(caixa.vendas.canceladas, 'cancelada', 'canceladas')}
         </p>
         <p className="dica">
           Dinheiro esperado = fundo {formatarMoeda(caixa.fundoTroco)} + vendas {formatarMoeda(caixa.recebido.dinheiro)} +
           suprimentos {formatarMoeda(caixa.suprimentos)} − sangrias {formatarMoeda(caixa.sangrias)}
         </p>
-        <table className="tabela">
+        <p className={`resultado-fechamento ${diferenca === 0 ? 'resultado-ok' : diferenca < 0 ? 'resultado-falta' : 'resultado-sobra'}`}>
+          {diferenca === 0
+            ? 'Caixa conferido: sem diferença.'
+            : diferenca < 0
+              ? `Falta de ${formatarMoeda(-diferenca)} no caixa.`
+              : `Sobra de ${formatarMoeda(diferenca)} no caixa.`}
+        </p>
+        <table className="tabela tabela-zebra">
           <thead>
             <tr>
               <th>Forma</th>
@@ -502,13 +515,6 @@ function RelatorioFechamento({
             ))}
           </tbody>
         </table>
-        <p className={diferenca === 0 ? 'aviso' : 'erro'}>
-          {diferenca === 0
-            ? 'Caixa conferido: sem diferença.'
-            : diferenca < 0
-              ? `Falta de ${formatarMoeda(-diferenca)} no caixa.`
-              : `Sobra de ${formatarMoeda(diferenca)} no caixa.`}
-        </p>
         {caixa.observacao && <p>Observação: {caixa.observacao}</p>}
       </section>
     </main>

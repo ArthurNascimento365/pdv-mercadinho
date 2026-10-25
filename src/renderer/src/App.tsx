@@ -34,6 +34,9 @@ const NOMES: Record<Tela, string> = {
   configuracoes: 'Configurações'
 }
 
+/** Disparado pela tela Caixa ao abrir ou fechar o caixa, para o cabeçalho se atualizar. */
+export const EVENTO_CAIXA = 'pdv:caixa'
+
 const relogio = (): string => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
 export function App(): React.JSX.Element {
@@ -42,21 +45,34 @@ export function App(): React.JSX.Element {
   const [caixa, setCaixa] = useState<ResumoCaixa | null>(null)
   const [hora, setHora] = useState(relogio)
 
+  const atualizarCaixa = (): void => {
+    window.pdv.caixa
+      .atual()
+      .then(setCaixa)
+      .catch(() => setCaixa(null))
+  }
+
   useEffect(() => {
     // A cada troca de tela: o nome pode ter mudado (Configurações) e o caixa aberto/fechado (F4).
     window.pdv.config
       .obter('loja.nome')
       .then((nome) => setNomeLoja(nome ?? ''))
       .catch(() => setNomeLoja(''))
-    window.pdv.caixa
-      .atual()
-      .then(setCaixa)
-      .catch(() => setCaixa(null))
+    atualizarCaixa()
   }, [tela])
 
   useEffect(() => {
-    const t = setInterval(() => setHora(relogio()), 20_000)
-    return () => clearInterval(t)
+    // Relógio e caixa do cabeçalho: o caixa pode abrir/fechar sem trocar de tela (F4).
+    const t = setInterval(() => {
+      setHora(relogio())
+      atualizarCaixa()
+    }, 20_000)
+    // A tela Caixa avisa na hora quando abre ou fecha.
+    window.addEventListener(EVENTO_CAIXA, atualizarCaixa)
+    return () => {
+      clearInterval(t)
+      window.removeEventListener(EVENTO_CAIXA, atualizarCaixa)
+    }
   }, [])
 
   const voltar = (): void => setTela('inicio')
