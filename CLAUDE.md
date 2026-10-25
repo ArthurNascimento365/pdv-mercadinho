@@ -26,8 +26,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - **25/10 — tela Vender reorganizada:** código no topo, barra de botões clicáveis abaixo,
   quantidade e desconto editáveis na lista (`vendas:alterarQuantidade`).
 - **25/10 — desconto na venda** com seleção entre porcentagem e valor (R$).
-- Instalador `dist/PDV Mercadinho Setup 0.1.2.exe` gerado em 25/10/2026 (tela Vender nova +
-  desconto %/R$). Schema do banco na versão 7. 292 testes passando (29 arquivos).
+- **25/10 — controle de caixa opcional** (desligado = dono único, caixa aberto automaticamente).
+- Instalador `dist/PDV Mercadinho Setup 0.1.3.exe` gerado em 25/10/2026 (tela Vender nova,
+  desconto %/R$, controle de caixa opcional). Schema do banco na versão 7. 296 testes (29 arquivos).
 
 ### Em andamento
 
@@ -77,7 +78,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.3.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.4.
 4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
@@ -171,6 +172,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   usam `onMouseDown` com `preventDefault` para o campo de código não roubar o foco do editor.
   Desconto na venda (F6) abre `DescontoVenda` (Modais.tsx): escolha entre porcentagem (F1) e
   valor em reais (F2), com prévia do total; vazio ou 0 tira o desconto.
+- Controle de caixa (Configurações → Caixa, chave `caixa.controle`): ligado por padrão. Desligado
+  (dono único), `garantirCaixaAberto` abre sozinho um caixa em nome de "Dono" (fundo 0) quando
+  precisa, e Início/Vender usam `caixa:paraVender`; sangria e fechamento seguem opcionais no F4.
 - Caixa: só se vende com caixa aberto (um por vez). A venda guarda `caixa_id`. Dinheiro
   esperado = fundo + dinheiro das vendas (menos troco) + suprimentos − sangrias. Fechamento é
   cego (contagem de todas as formas antes de ver o esperado) e grava esperado × contado em

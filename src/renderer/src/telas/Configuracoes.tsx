@@ -24,6 +24,7 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
   const [previa, setPrevia] = useState<Diagramado | null>(null)
   const [pix, setPix] = useState<ConfigPix | null>(null)
   const [diasAtraso, setDiasAtraso] = useState('30')
+  const [controleCaixa, setControleCaixa] = useState(true)
   const [modalFiado, setModalFiado] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -35,9 +36,11 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
       window.pdv.balanca.obterFormato(),
       window.pdv.hardware.obterConfig(),
       window.pdv.pix.obterConfig(),
-      window.pdv.config.obter('fiado.dias_atraso')
+      window.pdv.config.obter('fiado.dias_atraso'),
+      window.pdv.caixa.controleLigado()
     ])
-      .then(([nome, f, hw, p, dias]) => {
+      .then(([nome, f, hw, p, dias, controle]) => {
+        setControleCaixa(controle)
         setNomeLoja(nome ?? '')
         setFormato(f)
         setImpressora(hw.impressora)
@@ -60,6 +63,7 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
       if (!Number.isInteger(dias) || dias < 1 || dias > 365) throw new Error('Dias de atraso do fiado: de 1 a 365')
       await window.pdv.config.definir('loja.nome', nomeLoja.trim())
       await window.pdv.config.definir('fiado.dias_atraso', String(dias))
+      await window.pdv.caixa.definirControle(controleCaixa)
       setPix(await window.pdv.pix.salvarConfig(pix))
       await window.pdv.balanca.definirFormato(formato)
       setImpressora(await window.pdv.hardware.salvarImpressora(impressora))
@@ -116,6 +120,19 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
           Nome da loja (aparece no topo e, depois, no cupom)
           <input ref={refNome} value={nomeLoja} maxLength={60} onChange={(e) => setNomeLoja(e.target.value)} />
         </label>
+      </section>
+
+      <section className="secao">
+        <h3>Caixa</h3>
+        <label className="opcao">
+          <input type="checkbox" checked={controleCaixa} onChange={(e) => setControleCaixa(e.target.checked)} />
+          Controlar abertura e fechamento do caixa
+        </label>
+        <p className="dica">
+          {controleCaixa
+            ? 'Ligado: para vender, alguém abre o caixa (F4) com o nome do operador e o fundo de troco, e no fim do turno fecha com a contagem.'
+            : 'Desligado: para a loja em que o dono é o único operador. Vende direto, sem abrir nem fechar o caixa; o PDV mantém um caixa aberto em nome de "Dono". Sangria e fechamento continuam disponíveis no F4, se quiser usar.'}
+        </p>
       </section>
 
       <section className="secao">

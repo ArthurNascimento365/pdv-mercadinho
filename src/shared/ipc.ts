@@ -97,6 +97,9 @@ export interface CanaisIpc {
   'vendas:cancelarFinalizada': { args: [vendaId: number]; retorno: Venda }
 
   'caixa:atual': { args: []; retorno: ResumoCaixa | null }
+  'caixa:paraVender': { args: []; retorno: ResumoCaixa | null }
+  'caixa:controleLigado': { args: []; retorno: boolean }
+  'caixa:definirControle': { args: [ligado: boolean]; retorno: void }
   'caixa:abrir': { args: [operador: string, fundoTroco: Centavos]; retorno: ResumoCaixa }
   'caixa:movimentar': {
     args: [tipo: 'sangria' | 'suprimento', valor: Centavos, motivo: string | null]
@@ -227,6 +230,10 @@ export interface PdvApi {
   }
   caixa: {
     atual(): Promise<ResumoCaixa | null>
+    /** Caixa para vender: com o controle de caixa desligado, abre um sozinho. */
+    paraVender(): Promise<ResumoCaixa | null>
+    controleLigado(): Promise<boolean>
+    definirControle(ligado: boolean): Promise<void>
     abrir(operador: string, fundoTroco: Centavos): Promise<ResumoCaixa>
     movimentar(tipo: 'sangria' | 'suprimento', valor: Centavos, motivo: string | null): Promise<ResumoCaixa>
     fechar(contagem: Contagem, observacao: string | null): Promise<ResumoCaixa>

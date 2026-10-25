@@ -125,7 +125,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
 
   // Retoma a venda que estava aberta (inclusive depois de uma queda do PDV).
   useEffect(() => {
-    Promise.all([window.pdv.caixa.atual(), window.pdv.vendas.atual()])
+    Promise.all([window.pdv.caixa.paraVender(), window.pdv.vendas.atual()])
       .then(([c, v]) => {
         setCaixa(c)
         if (!v) return

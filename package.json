@@ -1,6 +1,6 @@
 {
   "name": "pdv-mercadinho",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "PDV offline para mercadinho (cupom não fiscal)",
   "main": "./out/main/index.js",

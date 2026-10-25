@@ -56,6 +56,9 @@ const api: PdvApi = {
   },
   caixa: {
     atual: () => invocar('caixa:atual'),
+    paraVender: () => invocar('caixa:paraVender'),
+    controleLigado: () => invocar('caixa:controleLigado'),
+    definirControle: (ligado) => invocar('caixa:definirControle', ligado),
     abrir: (operador, fundoTroco) => invocar('caixa:abrir', operador, fundoTroco),
     movimentar: (tipo, valor, motivo) => invocar('caixa:movimentar', tipo, valor, motivo),
     fechar: (contagem, observacao) => invocar('caixa:fechar', contagem, observacao),

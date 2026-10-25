@@ -4,9 +4,13 @@ import { abrirBanco, type Banco } from '../../src/main/db/conexao'
 import {
   abrirCaixa,
   caixaAberto,
+  caixaParaVender,
+  controleCaixaLigado,
+  definirControleCaixa,
   fecharCaixa,
   listarCaixas,
-  movimentarCaixa
+  movimentarCaixa,
+  OPERADOR_AUTOMATICO
 } from '../../src/main/caixa/caixa'
 import { criarProduto } from '../../src/main/repos/produtos'
 import {
@@ -36,6 +40,38 @@ describe('caixa', () => {
 
   it('não vende com o caixa fechado', () => {
     expect(() => adicionarProduto(db, produtoId, 1000)).toThrow(/caixa está fechado/)
+  })
+
+  describe('controle de caixa desligado (dono único)', () => {
+    it('vem ligado e caixaParaVender não abre nada', () => {
+      expect(controleCaixaLigado(db)).toBe(true)
+      expect(caixaParaVender(db)).toBeNull()
+    })
+
+    it('abre um caixa sozinho na primeira venda e o reaproveita', () => {
+      definirControleCaixa(db, false)
+      const v = vender(2, [['dinheiro', 2000]])
+      const caixa = caixaAberto(db)!
+      expect(caixa).toMatchObject({ operador: OPERADOR_AUTOMATICO, fundoTroco: 0 })
+      expect(v.caixaId).toBe(caixa.id)
+      vender(1, [['pix', 1000]])
+      expect(listarCaixas(db)).toHaveLength(1)
+      expect(caixaParaVender(db)!.vendas.quantidade).toBe(2)
+    })
+
+    it('depois de fechar à mão, a próxima venda abre outro caixa', () => {
+      definirControleCaixa(db, false)
+      const primeiro = caixaParaVender(db)!
+      fecharCaixa(db, contagem({}), null)
+      expect(vender(1, [['dinheiro', 1000]]).caixaId).not.toBe(primeiro.id)
+    })
+
+    it('religado, volta a exigir abertura', () => {
+      definirControleCaixa(db, false)
+      definirControleCaixa(db, true)
+      expect(() => adicionarProduto(db, produtoId, 1000)).toThrow(/caixa está fechado/)
+      expect(() => definirControleCaixa(db, 'nao')).toThrow(/inválida/)
+    })
   })
 
   it('abre uma vez só e exige operador', () => {

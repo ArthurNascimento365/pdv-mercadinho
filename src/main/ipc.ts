@@ -12,7 +12,16 @@ import {
   validarArquivo,
   type ServicoBackup
 } from './backup/backup'
-import { abrirCaixa, caixaAberto, fecharCaixa, listarCaixas, movimentarCaixa } from './caixa/caixa'
+import {
+  abrirCaixa,
+  caixaAberto,
+  caixaParaVender,
+  controleCaixaLigado,
+  definirControleCaixa,
+  fecharCaixa,
+  listarCaixas,
+  movimentarCaixa
+} from './caixa/caixa'
 import { confirmarEntrada, listarEntradas, sugerirVinculos } from './entradas/entradas'
 import { lerNfe } from './entradas/nfe'
 import {
@@ -273,6 +282,9 @@ export function registrarIpc({ db, caminhoBanco, impressao, backup }: ContextoIp
 
   // Caixa
   tratar('caixa:atual', () => caixaAberto(db))
+  tratar('caixa:paraVender', () => caixaParaVender(db))
+  tratar('caixa:controleLigado', () => controleCaixaLigado(db))
+  tratar('caixa:definirControle', (ligado) => definirControleCaixa(db, ligado))
   tratar('caixa:abrir', (operador, fundo) => abrirCaixa(db, operador, fundo))
   tratar('caixa:movimentar', (tipo, valor, motivo) => movimentarCaixa(db, tipo, valor, motivo))
   tratar('caixa:fechar', (contagem, observacao) => {

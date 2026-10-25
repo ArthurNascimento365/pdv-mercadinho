@@ -36,7 +36,7 @@ export function Inicio({ onAbrir }: { onAbrir: (tela: Tela) => void }): React.JS
   useEffect(() => {
     Promise.all([
       window.pdv.sistema.info(),
-      window.pdv.caixa.atual(),
+      window.pdv.caixa.paraVender(),
       window.pdv.estoque.contarNoMinimo(),
       window.pdv.backup.estado(),
       window.pdv.validade.alertas()

@@ -5,6 +5,7 @@ import { FORMAS_CONTAVEIS, FORMAS_PAGAMENTO, type FormaContavel, type FormaPagam
 import type { Banco } from '../db/conexao'
 import { emTransacao } from '../db/transacao'
 import { ErroNegocio, exigirId } from '../erros'
+import { definirConfig, obterConfig } from '../repos/configuracoes'
 
 const AGORA = `strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`
 const VALOR_MAXIMO = 10_000_000 // R$ 100.000,00
@@ -39,8 +40,32 @@ export function idCaixaAberto(db: Banco): number | null {
   return l?.id ?? null
 }
 
-export function exigirCaixaAberto(db: Banco): number {
+/** Nome do operador do caixa aberto automaticamente quando o controle de caixa está desligado. */
+export const OPERADOR_AUTOMATICO = 'Dono'
+
+/**
+ * Controle de caixa (abertura com operador, fechamento cego). Desligado para a loja em que o
+ * dono é o único operador: o PDV mantém um caixa aberto sozinho (`caixa.controle` = 'desligado').
+ */
+export function controleCaixaLigado(db: Banco): boolean {
+  return obterConfig(db, 'caixa.controle') !== 'desligado'
+}
+
+export function definirControleCaixa(db: Banco, ligado: unknown): void {
+  if (typeof ligado !== 'boolean') throw new ErroNegocio('Opção de controle de caixa inválida')
+  definirConfig(db, 'caixa.controle', ligado ? 'ligado' : 'desligado')
+}
+
+/** Caixa aberto; com o controle desligado, abre um sozinho (sem fundo de troco) se não houver. */
+export function garantirCaixaAberto(db: Banco): number | null {
   const id = idCaixaAberto(db)
+  if (id !== null || controleCaixaLigado(db)) return id
+  const r = db.prepare(`INSERT INTO caixas (status, operador, fundo_troco) VALUES ('aberto', ?, 0)`).run(OPERADOR_AUTOMATICO)
+  return Number(r.lastInsertRowid)
+}
+
+export function exigirCaixaAberto(db: Banco): number {
+  const id = garantirCaixaAberto(db)
   if (id === null) throw new ErroNegocio('O caixa está fechado. Abra o caixa (F4 na tela inicial) para vender.')
   return id
 }
@@ -135,6 +160,12 @@ export function obterCaixa(db: Banco, id: number): ResumoCaixa | null {
 
 export function caixaAberto(db: Banco): ResumoCaixa | null {
   const id = idCaixaAberto(db)
+  return id === null ? null : obterCaixa(db, id)
+}
+
+/** Para as telas Início e Vender: com o controle desligado, nunca devolve "caixa fechado". */
+export function caixaParaVender(db: Banco): ResumoCaixa | null {
+  const id = garantirCaixaAberto(db)
   return id === null ? null : obterCaixa(db, id)
 }
 
