@@ -41,6 +41,7 @@ const api: PdvApi = {
     atual: () => invocar('vendas:atual'),
     adicionarCodigo: (codigo, quantidade) => invocar('vendas:adicionarCodigo', codigo, quantidade),
     adicionarProduto: (produtoId, quantidade) => invocar('vendas:adicionarProduto', produtoId, quantidade),
+    alterarQuantidade: (itemId, quantidade) => invocar('vendas:alterarQuantidade', itemId, quantidade),
     descontoItem: (itemId, desconto) => invocar('vendas:descontoItem', itemId, desconto),
     descontoVenda: (desconto) => invocar('vendas:descontoVenda', desconto),
     cancelarItem: (itemId) => invocar('vendas:cancelarItem', itemId),

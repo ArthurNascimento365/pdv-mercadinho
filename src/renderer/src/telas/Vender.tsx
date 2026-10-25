@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { centavosParaTexto, formatarMoeda, quantidadeParaTexto } from '@shared/dinheiro'
+import { centavosParaTexto, formatarMoeda, lerQuantidade, quantidadeParaTexto } from '@shared/dinheiro'
 import type { ResumoCaixa } from '@shared/caixa'
 import type { Produto } from '@shared/produtos'
 import { FORMAS_PAGAMENTO, lerDesconto, lerEntradaCaixa, type ItemVenda, type Venda } from '@shared/vendas'
@@ -25,6 +25,86 @@ type Modal =
 
 const qtd = (q: number, unidade: 'UN' | 'KG'): string =>
   unidade === 'KG' ? `${quantidadeParaTexto(q, 'KG')} kg` : quantidadeParaTexto(q, 'UN')
+
+/** Ações da barra do caixa: cada uma também tem a tecla de atalho. */
+const BOTOES: [tecla: string, rotulo: string][] = [
+  ['F2', 'Buscar produto'],
+  ['F3', 'Cliente (fiado)'],
+  ['F5', 'Desconto no item'],
+  ['F6', 'Desconto na venda'],
+  ['F7', 'Cancelar item'],
+  ['F8', 'Cancelar venda'],
+  ['F9', 'Cancelar última venda'],
+  ['F10', 'Pagamento'],
+  ['F11', 'Ver último cupom'],
+  ['F12', 'Reimprimir cupom'],
+  ['Escape', 'Sair']
+]
+
+/**
+ * Célula da lista de itens editável com um clique (quantidade e desconto).
+ * Enter ou sair do campo salva; Esc desiste.
+ */
+function CelulaEditavel({
+  texto,
+  inicial,
+  editavel,
+  onSalvar,
+  onFim
+}: {
+  texto: string
+  inicial: string
+  editavel: boolean
+  onSalvar: (texto: string) => void
+  onFim: () => void
+}): React.JSX.Element {
+  const [editando, setEditando] = useState(false)
+  const terminado = useRef(false)
+
+  if (!editavel) return <>{texto}</>
+  if (!editando) {
+    return (
+      <button
+        className="celula-editavel"
+        tabIndex={-1}
+        title="Clique para editar"
+        // Não tira o foco do campo de código: senão ele o retoma e rouba o do editor.
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          terminado.current = false
+          setEditando(true)
+        }}
+      >
+        {texto || '—'}
+      </button>
+    )
+  }
+
+  function terminar(salvar: boolean, valor: string): void {
+    if (terminado.current) return
+    terminado.current = true
+    setEditando(false)
+    if (salvar && valor.trim() !== inicial) onSalvar(valor.trim())
+    onFim()
+  }
+
+  return (
+    <input
+      className="celula-input"
+      autoFocus
+      defaultValue={inicial}
+      inputMode="decimal"
+      onFocus={(e) => e.target.select()}
+      onKeyDown={(e) => {
+        // Enter/Esc/setas são do campo, não dos atalhos da tela.
+        if (['Enter', 'Escape', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.stopPropagation()
+        if (e.key === 'Enter') terminar(true, e.currentTarget.value)
+        if (e.key === 'Escape') terminar(false, '')
+      }}
+      onBlur={(e) => terminar(true, e.target.value)}
+    />
+  )
+}
 
 export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Element {
   const [venda, setVenda] = useState<Venda | null>(null)
@@ -160,26 +240,53 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
     })
   }
 
+  const focarCodigo = (): void => campo.current?.focus()
+
+  function editarQuantidade(i: ItemVenda, texto: string): void {
+    const q = lerQuantidade(texto)
+    if (q === null || q <= 0) {
+      falhar('Quantidade inválida')
+      return
+    }
+    if (q === i.quantidade) return
+    void executar(async () => atualizar(await window.pdv.vendas.alterarQuantidade(i.id, q), false))
+  }
+
+  function editarDesconto(i: ItemVenda, texto: string): void {
+    const d = lerDesconto(texto || '0', i.totalBruto)
+    if (d === null) {
+      falhar('Desconto inválido. Use reais (2,50) ou porcentagem (10%)')
+      return
+    }
+    if (d === i.desconto) return
+    void executar(async () => atualizar(await window.pdv.vendas.descontoItem(i.id, d), false))
+  }
+
+  /** Atalhos e botões da barra chamam as mesmas ações. */
+  const acoes: Record<string, () => void> = {
+    F2: () => setModal({ tipo: 'busca' }),
+    F3: () => (venda ? setModal({ tipo: 'cliente' }) : falhar('Bipe o primeiro item antes de identificar o cliente')),
+    F5: () => {
+      if (exigirItem()) setModal({ tipo: 'descontoItem', item: item! })
+    },
+    F6: () => (temItens ? setModal({ tipo: 'descontoVenda' }) : falhar('Venda sem itens')),
+    F7: () => {
+      if (exigirItem()) setModal({ tipo: 'cancelarItem', item: item! })
+    },
+    F8: () => (venda ? setModal({ tipo: 'cancelarVenda' }) : falhar('Nenhuma venda em andamento')),
+    F9: () => void abrirCancelarUltima(),
+    F10: () => (temItens ? setModal({ tipo: 'pagamento' }) : falhar('Venda sem itens')),
+    F11: () => void verCupom(),
+    F12: () => void reimprimir(),
+    Escape: onVoltar
+  }
+
   useTeclas(
     {
+      ...acoes,
       Enter: () => void lancarCodigo(),
-      F2: () => setModal({ tipo: 'busca' }),
-      F3: () => (venda ? setModal({ tipo: 'cliente' }) : falhar('Bipe o primeiro item antes de identificar o cliente')),
-      F5: () => {
-        if (exigirItem()) setModal({ tipo: 'descontoItem', item: item! })
-      },
-      F6: () => (temItens ? setModal({ tipo: 'descontoVenda' }) : falhar('Venda sem itens')),
-      F7: () => {
-        if (exigirItem()) setModal({ tipo: 'cancelarItem', item: item! })
-      },
-      F8: () => (venda ? setModal({ tipo: 'cancelarVenda' }) : falhar('Nenhuma venda em andamento')),
-      F9: () => void abrirCancelarUltima(),
-      F10: () => (temItens ? setModal({ tipo: 'pagamento' }) : falhar('Venda sem itens')),
-      F11: () => void verCupom(),
-      F12: () => void reimprimir(),
       ArrowUp: () => setSelecionado((s) => Math.max(0, s - 1)),
-      ArrowDown: () => setSelecionado((s) => Math.min(itens.length - 1, s + 1)),
-      Escape: onVoltar
+      ArrowDown: () => setSelecionado((s) => Math.min(itens.length - 1, s + 1))
     },
     modal === null && !!caixa
   )
@@ -205,6 +312,36 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
 
   return (
     <main className="caixa">
+      <div className="caixa-topo">
+        <label className="caixa-codigo">
+          Código (ou quantidade*código)
+          <input
+            ref={campo}
+            value={codigo}
+            inputMode="numeric"
+            autoComplete="off"
+            onChange={(e) => setCodigo(e.target.value)}
+            onBlur={(e) => {
+              // Volta o foco para o leitor, menos quando o operador está editando uma célula.
+              if (!modal && !(e.relatedTarget instanceof HTMLInputElement)) setTimeout(focarCodigo, 0)
+            }}
+          />
+        </label>
+        <nav className="caixa-acoes">
+          {BOTOES.map(([tecla, rotulo]) => (
+            <button
+              key={tecla}
+              className={tecla === 'F10' ? 'primario' : undefined}
+              tabIndex={-1}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => acoes[tecla]!()}
+            >
+              <kbd>{tecla === 'Escape' ? 'Esc' : tecla}</kbd> {rotulo}
+            </button>
+          ))}
+        </nav>
+      </div>
+
       <section className="caixa-itens">
         <div className="tabela-rolagem">
           <table className="tabela">
@@ -231,9 +368,25 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
                     {i.tipoPreco === 'promocao' && <span className="etiqueta oferta">oferta</span>}
                     {i.tipoPreco === 'atacado' && <span className="etiqueta oferta">atacado</span>}
                   </td>
-                  <td className="num">{qtd(i.quantidade, i.unidade)}</td>
+                  <td className="num">
+                    <CelulaEditavel
+                      texto={qtd(i.quantidade, i.unidade)}
+                      inicial={quantidadeParaTexto(i.quantidade, i.unidade)}
+                      editavel={!i.cancelado && i.tipoPreco !== 'etiqueta'}
+                      onSalvar={(t) => editarQuantidade(i, t)}
+                      onFim={focarCodigo}
+                    />
+                  </td>
                   <td className="num">{formatarMoeda(i.precoUnitario)}</td>
-                  <td className="num">{i.desconto ? `-${formatarMoeda(i.desconto)}` : ''}</td>
+                  <td className="num">
+                    <CelulaEditavel
+                      texto={i.desconto ? `-${formatarMoeda(i.desconto)}` : ''}
+                      inicial={i.desconto ? centavosParaTexto(i.desconto) : ''}
+                      editavel={!i.cancelado}
+                      onSalvar={(t) => editarDesconto(i, t)}
+                      onFim={focarCodigo}
+                    />
+                  </td>
                   <td className="num">{formatarMoeda(i.total)}</td>
                 </tr>
               ))}
@@ -241,18 +394,6 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
           </table>
           {itens.length === 0 && <p className="vazio">Caixa livre. Bipe um produto para começar.</p>}
         </div>
-
-        <label className="caixa-codigo">
-          Código (ou quantidade*código)
-          <input
-            ref={campo}
-            value={codigo}
-            inputMode="numeric"
-            autoComplete="off"
-            onChange={(e) => setCodigo(e.target.value)}
-            onBlur={() => !modal && setTimeout(() => campo.current?.focus(), 0)}
-          />
-        </label>
         {aviso && <p className={aviso.erro ? 'erro' : 'aviso'}>{aviso.texto}</p>}
       </section>
 
@@ -318,19 +459,9 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
             Caixa nº {caixa.id} · {caixa.operador}
           </p>
         )}
-        <ul className="caixa-teclas">
-          <li><kbd>F2</kbd> Buscar produto</li>
-          <li><kbd>F3</kbd> Cliente (fiado)</li>
-          <li><kbd>F5</kbd> Desconto no item</li>
-          <li><kbd>F6</kbd> Desconto na venda</li>
-          <li><kbd>F7</kbd> Cancelar item</li>
-          <li><kbd>F8</kbd> Cancelar venda</li>
-          <li><kbd>F9</kbd> Cancelar última venda</li>
-          <li><kbd>F10</kbd> Pagamento</li>
-          <li><kbd>F11</kbd> Ver último cupom</li>
-          <li><kbd>F12</kbd> Reimprimir último cupom</li>
-          <li><kbd>Esc</kbd> Sair (a venda fica salva)</li>
-        </ul>
+        <p className="dica caixa-dica">
+          Clique na quantidade ou no desconto de um item para corrigir. Ao sair (Esc), a venda fica salva.
+        </p>
       </aside>
 
       {modal?.tipo === 'busca' && <BuscaProduto onEscolher={(p) => void escolherNaBusca(p)} onFechar={() => setModal(null)} />}

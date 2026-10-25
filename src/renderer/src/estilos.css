@@ -364,9 +364,48 @@ button.perigo kbd {
 .caixa {
   display: grid;
   grid-template-columns: 1fr 380px;
-  gap: 20px;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 16px 20px;
   min-height: 0;
   padding: 16px 24px;
+}
+
+.caixa-topo {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+}
+
+.caixa-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.caixa-acoes button {
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+.celula-editavel {
+  padding: 2px 8px;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  background: none;
+  font-size: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.celula-editavel:hover {
+  border-color: var(--destaque);
+  background: var(--superficie);
+}
+
+.celula-input {
+  width: 110px;
+  padding: 2px 8px;
+  font-size: inherit;
+  text-align: right;
 }
 
 .caixa-itens {
@@ -453,20 +492,10 @@ button.perigo kbd {
   gap: 8px;
 }
 
-.caixa-teclas {
-  display: grid;
-  gap: 6px;
-  margin: auto 0 0;
-  padding: 12px 0 0;
+.caixa-dica {
+  margin-top: auto;
+  padding-top: 12px;
   border-top: 1px solid var(--borda);
-  list-style: none;
-  font-size: 14px;
-}
-
-.caixa-teclas kbd {
-  display: inline-block;
-  min-width: 42px;
-  text-align: center;
 }
 
 /* Pagamento */

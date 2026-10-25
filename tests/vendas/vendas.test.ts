@@ -12,6 +12,7 @@ import {
   adicionarPagamento,
   adicionarPorCodigo,
   adicionarProduto,
+  alterarQuantidade,
   cancelarItem,
   cancelarVendaAberta,
   cancelarVendaFinalizada,
@@ -134,6 +135,27 @@ describe('vendas', () => {
       expect(depois.itens[0]!.cancelado).toBe(true)
       expect([depois.subtotal, depois.desconto, depois.total]).toEqual([699, 699, 0])
       expect(() => cancelarItem(db, v.itens[0]!.id)).toThrow(/já foi cancelado/)
+    })
+
+    it('alterar a quantidade recalcula o item e a venda, limitando o desconto', () => {
+      const v1 = venda(bipar(EAN_LEITE, 2000)) // 14,98
+      descontoItem(db, v1.itens[0]!.id, 1000)
+      const v2 = alterarQuantidade(db, v1.itens[0]!.id, 3000)
+      expect(v2.itens[0]).toMatchObject({ quantidade: 3000, totalBruto: 2247, desconto: 1000, total: 1247 })
+      expect(v2.total).toBe(1247)
+      const v3 = alterarQuantidade(db, v1.itens[0]!.id, 1000) // 7,49: desconto cai para o valor do item
+      expect(v3.itens[0]).toMatchObject({ desconto: 749, total: 0 })
+      expect(() => alterarQuantidade(db, v1.itens[0]!.id, 1500)).toThrow(/quantidade inteira/)
+      expect(() => alterarQuantidade(db, v1.itens[0]!.id, 0)).toThrow(/inválida/)
+    })
+
+    it('alterar a quantidade aceita peso e recusa item de etiqueta ou cancelado', () => {
+      const v = venda(bipar('12', 1000)) // banana 6,99
+      expect(alterarQuantidade(db, v.itens[0]!.id, 500).itens[0]).toMatchObject({ quantidade: 500, total: 350 })
+      const etiqueta = venda(bipar(montarEtiquetaBalanca({ codigoProduto: 12, valor: 836 }, FORMATO))).itens[1]!
+      expect(() => alterarQuantidade(db, etiqueta.id, 2000)).toThrow(/etiqueta de balança/)
+      cancelarItem(db, v.itens[0]!.id)
+      expect(() => alterarQuantidade(db, v.itens[0]!.id, 2000)).toThrow(/já foi cancelado/)
     })
 
     it('cancelar a venda aberta libera para uma nova', () => {

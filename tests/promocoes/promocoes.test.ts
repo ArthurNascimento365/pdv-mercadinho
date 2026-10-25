@@ -5,7 +5,7 @@ import { abrirCaixa } from '../../src/main/caixa/caixa'
 import { abrirBanco, type Banco } from '../../src/main/db/conexao'
 import { htmlEtiquetas, marcarEtiquetasImpressas, produtosParaEtiqueta } from '../../src/main/promocoes/etiquetas'
 import { atualizarProduto, criarProduto, obterProduto, produtoParaEntrada } from '../../src/main/repos/produtos'
-import { adicionarProduto, cancelarItem, descontoItem, vendaAberta } from '../../src/main/vendas/vendas'
+import { adicionarProduto, alterarQuantidade, cancelarItem, descontoItem, vendaAberta } from '../../src/main/vendas/vendas'
 import { entrada } from '../ajuda'
 
 const dia = (n: number): string => {
@@ -81,6 +81,15 @@ describe('promoção e atacarejo', () => {
     const depois = cancelarItem(db, v.itens[2]!.id)
     expect(depois.itens.slice(0, 2).map((i) => i.precoUnitario)).toEqual([900, 900])
     expect(depois.total).toBe(1800)
+  })
+
+  it('atacarejo é reavaliado ao alterar a quantidade do item', () => {
+    const p = criarProduto(db, entrada({ precoVenda: 900, atacadoQuantidade: 3000, atacadoPreco: 800 }))
+    const v1 = adicionarProduto(db, p.id, 1000)
+    const v2 = alterarQuantidade(db, v1.itens[0]!.id, 3000)
+    expect(v2.itens[0]).toMatchObject({ precoUnitario: 800, tipoPreco: 'atacado', total: 2400 })
+    const v3 = alterarQuantidade(db, v1.itens[0]!.id, 2000)
+    expect(v3.itens[0]).toMatchObject({ precoUnitario: 900, tipoPreco: 'normal', total: 1800 })
   })
 
   it('atacarejo mantém o desconto do item, limitado ao novo valor', () => {

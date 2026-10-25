@@ -274,6 +274,35 @@ export function descontoItem(db: Banco, itemId: unknown, desconto: unknown): Ven
   })
 }
 
+/**
+ * Corrige a quantidade de um item já lançado (edição direta na lista do caixa).
+ * Etiqueta de balança não muda: o total impresso é o que vale. O desconto do item
+ * fica limitado ao novo valor e o atacarejo é reavaliado.
+ */
+export function alterarQuantidade(db: Banco, itemId: unknown, quantidade: unknown): Venda {
+  return emTransacao(db, () => {
+    const item = itemDaVendaAberta(db, itemId)
+    if (item.tipo_preco === 'etiqueta') {
+      throw new ErroNegocio('Item de etiqueta de balança: cancele e bipe a etiqueta de novo')
+    }
+    const produto = obterProduto(db, item.produto_id)!
+    const q = exigirQuantidade(produto, quantidade)
+    const bruto = totalItem(item.preco_unitario, q)
+    if (bruto === 0) throw new ErroNegocio('Quantidade pequena demais: o item sairia de graça')
+    const desconto = Math.min(item.desconto, bruto)
+    db.prepare('UPDATE venda_itens SET quantidade = ?, total_bruto = ?, desconto = ?, total = ? WHERE id = ?').run(
+      q,
+      bruto,
+      desconto,
+      bruto - desconto,
+      item.id
+    )
+    reprecificarAtacado(db, item.venda_id, produto)
+    recalcular(db, item.venda_id)
+    return obterVenda(db, item.venda_id)!
+  })
+}
+
 export function descontoVenda(db: Banco, desconto: unknown): Venda {
   return emTransacao(db, () => {
     const vendaId = exigirVendaAberta(db)

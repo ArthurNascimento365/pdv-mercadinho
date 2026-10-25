@@ -88,6 +88,7 @@ import {
   adicionarPagamento,
   adicionarPorCodigo,
   adicionarProduto,
+  alterarQuantidade,
   cancelarItem,
   cancelarVendaAberta,
   cancelarVendaFinalizada,
@@ -185,6 +186,7 @@ export function registrarIpc({ db, caminhoBanco, impressao, backup }: ContextoIp
     return adicionarPorCodigo(db, exigirTexto(codigo, 'código', { max: 30 }), quantidade, obterFormatoBalanca(db))
   })
   tratar('vendas:adicionarProduto', (produtoId, quantidade) => adicionarProduto(db, produtoId, quantidade))
+  tratar('vendas:alterarQuantidade', (itemId, quantidade) => alterarQuantidade(db, itemId, quantidade))
   tratar('vendas:descontoItem', (itemId, desconto) => descontoItem(db, itemId, desconto))
   tratar('vendas:descontoVenda', (desconto) => descontoVenda(db, desconto))
   tratar('vendas:cancelarItem', (itemId) => cancelarItem(db, itemId))

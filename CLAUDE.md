@@ -160,6 +160,10 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - Caixa (tela Vender): Enter lança o código; `3*código` multiplica; PLU de até 6 dígitos
   digitado à mão pede o peso; F2 busca, F5/F6 desconto item/venda, F7/F8 cancela item/venda,
   F9 cancela a última venda finalizada, F10 pagamento (F1–F4 escolhe a forma).
+  Layout: campo de código no topo e, logo abaixo, a barra de botões clicáveis (mesmas ações dos
+  atalhos, mapa `acoes`). Quantidade e desconto do item se editam com um clique na lista
+  (`alterarQuantidade` no main; etiqueta de balança não muda a quantidade). Botões e células
+  usam `onMouseDown` com `preventDefault` para o campo de código não roubar o foco do editor.
 - Caixa: só se vende com caixa aberto (um por vez). A venda guarda `caixa_id`. Dinheiro
   esperado = fundo + dinheiro das vendas (menos troco) + suprimentos − sangrias. Fechamento é
   cego (contagem de todas as formas antes de ver o esperado) e grava esperado × contado em

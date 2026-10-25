@@ -81,6 +81,7 @@ export interface CanaisIpc {
   'vendas:atual': { args: []; retorno: Venda | null }
   'vendas:adicionarCodigo': { args: [codigo: string, quantidade: Milesimos | null]; retorno: ResultadoAdicionar }
   'vendas:adicionarProduto': { args: [produtoId: number, quantidade: Milesimos]; retorno: Venda }
+  'vendas:alterarQuantidade': { args: [itemId: number, quantidade: Milesimos]; retorno: Venda }
   'vendas:descontoItem': { args: [itemId: number, desconto: Centavos]; retorno: Venda }
   'vendas:descontoVenda': { args: [desconto: Centavos]; retorno: Venda }
   'vendas:cancelarItem': { args: [itemId: number]; retorno: Venda }
@@ -212,6 +213,7 @@ export interface PdvApi {
     atual(): Promise<Venda | null>
     adicionarCodigo(codigo: string, quantidade: Milesimos | null): Promise<ResultadoAdicionar>
     adicionarProduto(produtoId: number, quantidade: Milesimos): Promise<Venda>
+    alterarQuantidade(itemId: number, quantidade: Milesimos): Promise<Venda>
     descontoItem(itemId: number, desconto: Centavos): Promise<Venda>
     descontoVenda(desconto: Centavos): Promise<Venda>
     cancelarItem(itemId: number): Promise<Venda>
