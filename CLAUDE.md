@@ -64,8 +64,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - Backup principal fica no mesmo disco do PDV; na loja, configurar pendrive e pasta da nuvem.
 - Servidores do Open Food Facts tiveram timeouts intermitentes nos testes (o PDV já cai para
   o cadastro manual).
-- Sem controle de versão (git não instalado); projeto dentro do OneDrive, que sincroniza
-  `node_modules`.
+- Projeto dentro do OneDrive, que sincroniza `node_modules` (e agora também `.git`).
 
 ### Próximos passos sugeridos
 
@@ -73,7 +72,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
 3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.1.
-4. Instalar git e tirar o projeto do OneDrive (ou excluir `node_modules` da sincronização).
+4. Tirar o projeto do OneDrive (o GitHub já guarda o código) ou excluir `node_modules` da sincronização.
 5. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
@@ -197,5 +196,6 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 
 ## Ambiente
 
-- Windows 11, PowerShell 5.1, Node 24. Sem git instalado.
+- Windows 11, PowerShell 5.1, Node 24. Git 2.56 e GitHub CLI instalados (25/10/2026).
+- Repositório privado: https://github.com/ArthurNascimento365/pdv-mercadinho (branch `main`).
 - O projeto fica dentro do OneDrive; o banco do app fica em `%APPDATA%/pdv-mercadinho/dados/pdv.db`.
