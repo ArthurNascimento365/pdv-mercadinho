@@ -23,8 +23,10 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   estimado); lista de compras (PDF/WhatsApp); promoções, atacarejo e etiquetas de gôndola A4.
 - **Pós-MVP (19/10):** consulta de EAN com `product_type=all` (alimentos + higiene/cosméticos
   + pet + limpeza nas bases Open Facts).
-- Instalador `dist/PDV Mercadinho Setup 0.1.0.exe` gerado em 19/10/2026 já com o
-  `product_type=all`. Schema do banco na versão 7. 289 testes passando (29 arquivos).
+- **25/10 — tela Vender reorganizada:** código no topo, barra de botões clicáveis abaixo,
+  quantidade e desconto editáveis na lista (`vendas:alterarQuantidade`).
+- Instalador `dist/PDV Mercadinho Setup 0.1.1.exe` gerado em 25/10/2026 (versão 0.1.1, com a
+  tela Vender nova). Schema do banco na versão 7. 292 testes passando (29 arquivos).
 
 ### Em andamento
 
@@ -58,22 +60,24 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - **NF-e real de fornecedor não testada:** só a fixture `tests/fixtures/nfe-exemplo.xml`.
 - Restauração de backup testada só nos testes unitários, não no app (ela reinicia o programa).
 - Medidas da folha de etiquetas (Pimaco A4256, 63,5 × 38,1 mm) não conferidas em impressão.
-- Instalador sem assinatura digital (aviso do SmartScreen), com o ícone padrão do Electron, e
-  versão ainda 0.1.0 (não dá para distinguir instalações antigas das novas pelo número).
+- Instalador sem assinatura digital (aviso do SmartScreen) e com o ícone padrão do Electron.
+- Tela Vender nova testada só no navegador com `window.pdv` simulado, não no Electron.
+- Nesta máquina o `electron.exe` de `node_modules/electron/dist` não baixou (bug de dependência
+  opcional do npm no `@electron-internal/extract-zip`): `npm run dev` não abre até reinstalar
+  (`rm node_modules package-lock.json` + `npm i`, ou `npm i electron` de novo). `npm run dist`
+  funciona, pois o electron-builder baixa o próprio Electron.
 - Senha do gerente só é pedida no fiado; cancelamento e desconto continuam livres.
 - Backup principal fica no mesmo disco do PDV; na loja, configurar pendrive e pasta da nuvem.
 - Servidores do Open Food Facts tiveram timeouts intermitentes nos testes (o PDV já cai para
   o cadastro manual).
-- Projeto dentro do OneDrive, que sincroniza `node_modules` (e agora também `.git`).
 
 ### Próximos passos sugeridos
 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.1.
-4. Tirar o projeto do OneDrive (o GitHub já guarda o código) ou excluir `node_modules` da sincronização.
-5. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.2.
+4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
 
@@ -200,6 +204,10 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 
 ## Ambiente
 
-- Windows 11, PowerShell 5.1, Node 24. Git 2.56 e GitHub CLI instalados (25/10/2026).
-- Repositório privado: https://github.com/ArthurNascimento365/pdv-mercadinho (branch `main`).
-- O projeto fica dentro do OneDrive; o banco do app fica em `%APPDATA%/pdv-mercadinho/dados/pdv.db`.
+- Máquina atual (desde 25/10/2026): Windows 10, PowerShell 5.1, Node 24, Git 2.56 (sem GitHub
+  CLI). Projeto em `C:\dev\PDV`, fora do OneDrive. A máquina anterior era Windows 11 com o
+  projeto no OneDrive.
+- Repositório: https://github.com/ArthurNascimento365/pdv-mercadinho (branch `main`; o GitHub o
+  mostra como público).
+- O banco do app fica em `%APPDATA%/pdv-mercadinho/dados/pdv.db` — o `npm run dev` usa o mesmo
+  banco do PDV instalado (e o lock de instância única impede os dois abertos ao mesmo tempo).
