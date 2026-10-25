@@ -1,0 +1,25 @@
+# Dependências e saídas de build
+node_modules/
+out/
+dist/
+*.tsbuildinfo
+
+# Banco de dados e backups (dados da loja nunca vão para o repositório)
+*.db
+*.db-wal
+*.db-shm
+*.db.parcial
+
+# Segredos: certificado digital (e-CNPJ A1) e variáveis de ambiente
+*.pfx
+*.p12
+.env
+.env.*
+
+# Logs, editor e sistema
+*.log
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+  <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+    <infNFe Id="NFe35261012345678000195550010000012341000012345" versao="4.00">
+      <ide>
+        <cUF>35</cUF>
+        <natOp>VENDA DE MERCADORIA</natOp>
+        <mod>55</mod>
+        <serie>1</serie>
+        <nNF>1234</nNF>
+        <dhEmi>2026-10-15T10:30:00-03:00</dhEmi>
+        <tpNF>1</tpNF>
+      </ide>
+      <emit>
+        <CNPJ>12345678000195</CNPJ>
+        <xNome>DISTRIBUIDORA EXEMPLO DE ALIMENTOS LTDA</xNome>
+        <xFant>Distribuidora Exemplo</xFant>
+        <enderEmit>
+          <xLgr>RUA DOS TESTES</xLgr>
+          <fone>1133334444</fone>
+        </enderEmit>
+      </emit>
+      <dest>
+        <CNPJ>98765432000110</CNPJ>
+        <xNome>MERCADINHO</xNome>
+      </dest>
+      <det nItem="1">
+        <prod>
+          <cProd>000123</cProd>
+          <cEAN>17891000100100</cEAN>
+          <xProd>LEITE CONDENSADO 395G CX C/24</xProd>
+          <NCM>04029900</NCM>
+          <CFOP>5405</CFOP>
+          <uCom>CX</uCom>
+          <qCom>2.0000</qCom>
+          <vUnCom>120.0000000000</vUnCom>
+          <vProd>240.00</vProd>
+          <cEANTrib>7891000100103</cEANTrib>
+          <uTrib>UN</uTrib>
+          <qTrib>48.0000</qTrib>
+          <vUnTrib>5.0000000000</vUnTrib>
+          <vDesc>10.00</vDesc>
+          <indTot>1</indTot>
+          <rastro>
+            <nLote>L123</nLote>
+            <qLote>48.000</qLote>
+            <dFab>2026-09-01</dFab>
+            <dVal>2027-03-31</dVal>
+          </rastro>
+        </prod>
+        <imposto>
+          <ICMS>
+            <ICMS10>
+              <orig>0</orig>
+              <CST>10</CST>
+              <vICMSST>12.50</vICMSST>
+            </ICMS10>
+          </ICMS>
+          <IPI>
+            <cEnq>999</cEnq>
+            <IPITrib>
+              <CST>50</CST>
+              <vIPI>5.00</vIPI>
+            </IPITrib>
+          </IPI>
+        </imposto>
+      </det>
+      <det nItem="2">
+        <prod>
+          <cProd>000456</cProd>
+          <cEAN>7891000100110</cEAN>
+          <xProd>ACUCAR CRISTAL 1KG</xProd>
+          <uCom>UN</uCom>
+          <qCom>10.0000</qCom>
+          <vUnCom>4.1000000000</vUnCom>
+          <vProd>41.00</vProd>
+          <cEANTrib>7891000100110</cEANTrib>
+          <uTrib>UN</uTrib>
+          <qTrib>10.0000</qTrib>
+          <indTot>1</indTot>
+        </prod>
+        <imposto>
+          <ICMS>
+            <ICMSSN102>
+              <orig>0</orig>
+              <CSOSN>102</CSOSN>
+            </ICMSSN102>
+          </ICMS>
+        </imposto>
+      </det>
+      <det nItem="3">
+        <prod>
+          <cProd>ABC-77</cProd>
+          <cEAN>SEM GTIN</cEAN>
+          <xProd>QUEIJO MUSSARELA   PECA KG</xProd>
+          <uCom>KG</uCom>
+          <qCom>3.2500</qCom>
+          <vUnCom>32.0000000000</vUnCom>
+          <vProd>104.00</vProd>
+          <cEANTrib>SEM GTIN</cEANTrib>
+          <uTrib>KG</uTrib>
+          <qTrib>3.2500</qTrib>
+          <indTot>1</indTot>
+        </prod>
+        <imposto>
+          <ICMS>
+            <ICMS00>
+              <orig>0</orig>
+              <CST>00</CST>
+            </ICMS00>
+          </ICMS>
+        </imposto>
+      </det>
+      <total>
+        <ICMSTot>
+          <vProd>385.00</vProd>
+          <vDesc>10.00</vDesc>
+          <vST>12.50</vST>
+          <vIPI>5.00</vIPI>
+          <vNF>392.50</vNF>
+        </ICMSTot>
+      </total>
+    </infNFe>
+  </NFe>
+  <protNFe versao="4.00">
+    <infProt>
+      <chNFe>35261012345678000195550010000012341000012345</chNFe>
+      <cStat>100</cStat>
+    </infProt>
+  </protNFe>
+</nfeProc>

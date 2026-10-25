@@ -1,0 +1,18 @@
+appId: br.com.pdvmercadinho.app
+productName: PDV Mercadinho
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**/*
+  - package.json
+# serialport usa binário N-API pré-compilado (vale para qualquer Electron): não recompilar,
+# a máquina não tem Visual Studio.
+npmRebuild: false
+win:
+  target: nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  shortcutName: PDV Mercadinho
