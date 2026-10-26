@@ -29,7 +29,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - **25/10 — controle de caixa opcional** (desligado = dono único, caixa aberto automaticamente).
 - **25/10 — visual novo** (sistema de design): Vender, Início, Caixa, listas, Configurações e
   Backup. Tema escuro adiado pelo usuário; Relatórios, Pagamento e modais só herdaram os tokens.
-- Instalador `dist/PDV Mercadinho Setup 0.1.4.exe` gerado em 25/10/2026 (visual novo).
+- **25/10 — descrição do produto em maiúsculas** ao digitar no cadastro.
+- Instalador `dist/PDV Mercadinho Setup 0.1.5.exe` gerado em 25/10/2026 (visual novo +
+  descrição em maiúsculas).
   Schema do banco na versão 7. 296 testes (29 arquivos).
 
 ### Em andamento
@@ -83,7 +85,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.5.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.6.
 4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
@@ -168,6 +170,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   "Esc Início" — as telas não têm botão "Voltar" próprio. Páginas: `.pagina-media` (até
   1280 px, centralizada); seções em colunas com `.secoes-colunas`. Toda tabela já tem zebra e
   linha `.selecionada` com barra verde. Tudo precisa caber em 1024×700 sem rolagem horizontal.
+- Descrição de produto em maiúsculas: o formulário converte ao digitar (`maiusculas` em
+  FormProduto.tsx); a importação CSV grava como vier na planilha.
 - Produto nunca é apagado, só inativado (vendas antigas apontam para ele).
 - EAN precisa ter dígito verificador válido. Etiqueta de balança: EAN-13 com prefixo 2,
   formato (dígitos do código 4/5/6, preço ou peso) em `configuracoes` (`balanca.*`).
