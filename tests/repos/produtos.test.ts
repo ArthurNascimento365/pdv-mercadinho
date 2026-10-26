@@ -6,6 +6,7 @@ import {
   criarProduto,
   definirAtivo,
   listarCategorias,
+  proximoCodigoInterno,
   validarProdutoEntrada
 } from '../../src/main/repos/produtos'
 import { entrada } from '../ajuda'
@@ -22,6 +23,17 @@ describe('produtos', () => {
     const p = criarProduto(db, entrada({ ean: EAN }))
     expect(p).toMatchObject({ ean: EAN, descricao: 'Arroz Tipo 1 5kg', categoria: 'Mercearia', ativo: true })
     expect(p.categoriaId).toBeTypeOf('number')
+  })
+
+  it('próximo código interno: o menor livre a partir de 1, preenchendo buracos', () => {
+    expect(proximoCodigoInterno(db)).toBe(1)
+    criarProduto(db, entrada({ descricao: 'Pão de forma', codigoBalanca: 1 }))
+    criarProduto(db, entrada({ descricao: 'Sacola', codigoBalanca: 2 }))
+    const gelo = criarProduto(db, entrada({ descricao: 'Gelo', codigoBalanca: 4 }))
+    expect(proximoCodigoInterno(db)).toBe(3)
+    criarProduto(db, entrada({ descricao: 'Vela', codigoBalanca: 3 }))
+    definirAtivo(db, gelo.id, false)
+    expect(proximoCodigoInterno(db)).toBe(5) // inativo continua com o código
   })
 
   it('reaproveita categoria ignorando maiúsculas', () => {
@@ -50,7 +62,7 @@ describe('produtos', () => {
   it('não deixa repetir EAN nem código de balança', () => {
     criarProduto(db, entrada({ ean: EAN, codigoBalanca: 12 }))
     expect(() => criarProduto(db, entrada({ ean: EAN }))).toThrow(/já está cadastrado em "Arroz/)
-    expect(() => criarProduto(db, entrada({ codigoBalanca: 12 }))).toThrow(/código de balança 12/)
+    expect(() => criarProduto(db, entrada({ codigoBalanca: 12 }))).toThrow(/código 12 já é de/)
   })
 
   it('atualiza e marca a data de mudança de preço só quando o preço muda', async () => {

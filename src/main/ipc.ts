@@ -88,7 +88,8 @@ import {
   definirAtivo,
   listarCategorias,
   obterProduto,
-  produtosNoMinimo
+  produtosNoMinimo,
+  proximoCodigoInterno
 } from './repos/produtos'
 import { consultarEan } from './servicos/consultaEan'
 import { resolverCodigo } from './servicos/leitorCodigo'
@@ -179,6 +180,7 @@ export function registrarIpc({ db, caminhoBanco, impressao, backup }: ContextoIp
   tratar('produtos:consultarEan', (ean) =>
     consultarEan(db, exigirTexto(ean, 'EAN', { max: 20 }), (e) => consultarOpenFoodFacts(e, net.fetch))
   )
+  tratar('produtos:proximoCodigoInterno', () => proximoCodigoInterno(db))
   tratar('produtos:resolverCodigo', (codigo) =>
     resolverCodigo(db, exigirTexto(codigo, 'código', { max: 30 }), obterFormatoBalanca(db))
   )

@@ -30,6 +30,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - **25/10 — visual novo** (sistema de design): Vender, Início, Caixa, listas, Configurações e
   Backup. Tema escuro adiado pelo usuário; Relatórios, Pagamento e modais só herdaram os tokens.
 - **25/10 — descrição do produto em maiúsculas** ao digitar no cadastro.
+- **26/10 — código interno** para produto sem EAN (campo único "Código (EAN ou interno)" + Gerar).
 - Instalador `dist/PDV Mercadinho Setup 0.1.5.exe` gerado em 25/10/2026 (visual novo +
   descrição em maiúsculas).
   Schema do banco na versão 7. 296 testes (29 arquivos).
@@ -170,6 +171,11 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   "Esc Início" — as telas não têm botão "Voltar" próprio. Páginas: `.pagina-media` (até
   1280 px, centralizada); seções em colunas com `.secoes-colunas`. Toda tabela já tem zebra e
   linha `.selecionada` com barra verde. Tudo precisa caber em 1024×700 sem rolagem horizontal.
+- Produto sem código de barras: no cadastro, o campo "Código (EAN ou interno)" aceita o EAN ou
+  um código interno curto (até 6 dígitos; botão "Gerar código interno" = `proximoCodigoInterno`,
+  menor livre a partir de 1). O código interno fica na coluna `codigo_balanca` (a mesma do PLU),
+  então o caixa o resolve igual (digita + Enter). Produto KG mantém EAN e "Código na balança"
+  separados. A lista mostra "int. N" (UN) ou "bal. N" (KG); CSV aceita a coluna `codigo_interno`.
 - Descrição de produto em maiúsculas: o formulário converte ao digitar (`maiusculas` em
   FormProduto.tsx); a importação CSV grava como vier na planilha.
 - Produto nunca é apagado, só inativado (vendas antigas apontam para ele).

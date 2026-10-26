@@ -26,6 +26,7 @@ const api: PdvApi = {
     definirAtivo: (id, ativo) => invocar('produtos:definirAtivo', id, ativo),
     consultarEan: (ean) => invocar('produtos:consultarEan', ean),
     resolverCodigo: (codigo) => invocar('produtos:resolverCodigo', codigo),
+    proximoCodigoInterno: () => invocar('produtos:proximoCodigoInterno'),
     categorias: () => invocar('categorias:listar')
   },
   balanca: {

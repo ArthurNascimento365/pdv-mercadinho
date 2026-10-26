@@ -40,7 +40,7 @@ const ALIASES: Record<Campo, string[]> = {
   categoria: ['categoria', 'grupo', 'departamento', 'secao'],
   estoqueAtual: ['estoque', 'estoque_atual', 'quantidade', 'qtd', 'saldo'],
   estoqueMinimo: ['estoque_minimo', 'minimo', 'est_minimo'],
-  codigoBalanca: ['codigo_balanca', 'cod_balanca', 'plu', 'balanca']
+  codigoBalanca: ['codigo_balanca', 'cod_balanca', 'plu', 'balanca', 'codigo_interno', 'cod_interno']
 }
 
 const UNIDADES: Record<string, Unidade> = {

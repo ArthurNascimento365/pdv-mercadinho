@@ -69,6 +69,7 @@ export interface CanaisIpc {
   'produtos:definirAtivo': { args: [id: number, ativo: boolean]; retorno: void }
   'produtos:consultarEan': { args: [ean: string]; retorno: ResultadoConsultaEan }
   'produtos:resolverCodigo': { args: [codigo: string]; retorno: CodigoResolvido | null }
+  'produtos:proximoCodigoInterno': { args: []; retorno: number }
   'categorias:listar': { args: []; retorno: Categoria[] }
 
   'balanca:obterFormato': { args: []; retorno: FormatoBalanca }
@@ -198,6 +199,8 @@ export interface PdvApi {
     definirAtivo(id: number, ativo: boolean): Promise<void>
     consultarEan(ean: string): Promise<ResultadoConsultaEan>
     resolverCodigo(codigo: string): Promise<CodigoResolvido | null>
+    /** Menor código interno livre (1, 2, 3...) para produto sem código de barras. */
+    proximoCodigoInterno(): Promise<number>
     categorias(): Promise<Categoria[]>
   }
   balanca: {

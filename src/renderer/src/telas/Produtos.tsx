@@ -86,7 +86,7 @@ export function Produtos({ onVoltar }: { onVoltar: () => void }): React.JSX.Elem
           <Icone nome="busca" />
           <input
             ref={busca}
-            placeholder="Buscar por descrição, EAN ou código da balança"
+            placeholder="Buscar por descrição, EAN ou código interno"
             value={termo}
             onChange={(e) => setTermo(e.target.value)}
           />
@@ -133,7 +133,10 @@ export function Produtos({ onVoltar }: { onVoltar: () => void }): React.JSX.Elem
                 onClick={() => setSelecionado(i)}
                 onDoubleClick={() => setEditando(p)}
               >
-                <td className="codigo">{p.ean ?? (p.codigoBalanca !== null ? `bal. ${p.codigoBalanca}` : '—')}</td>
+                <td className="codigo">
+                  {p.ean ??
+                    (p.codigoBalanca === null ? '—' : p.unidade === 'KG' ? `bal. ${p.codigoBalanca}` : `int. ${p.codigoBalanca}`)}
+                </td>
                 <td>
                   {p.descricao}
                   {!p.ativo && <span className="etiqueta">inativo</span>}

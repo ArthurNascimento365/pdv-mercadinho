@@ -15,7 +15,8 @@ interface Props {
 const maiusculas = (texto: string): string => texto.toLocaleUpperCase('pt-BR')
 
 interface Campos {
-  ean: string
+  /** EAN, ou código interno (até 6 dígitos) do produto por unidade sem código de barras. */
+  codigo: string
   descricao: string
   unidade: Unidade
   precoVenda: string
@@ -33,7 +34,7 @@ interface Campos {
 
 function camposDe(p: Produto | null): Campos {
   return {
-    ean: p?.ean ?? '',
+    codigo: p?.ean ?? (p?.unidade === 'UN' && p.codigoBalanca != null ? String(p.codigoBalanca) : ''),
     descricao: p?.descricao ?? '',
     unidade: p?.unidade ?? 'UN',
     precoVenda: p ? centavosParaTexto(p.precoVenda) : '',
@@ -41,7 +42,8 @@ function camposDe(p: Produto | null): Campos {
     categoria: p?.categoria ?? '',
     estoqueAtual: p ? quantidadeParaTexto(p.estoqueAtual, p.unidade) : '0',
     estoqueMinimo: p ? quantidadeParaTexto(p.estoqueMinimo, p.unidade) : '0',
-    codigoBalanca: p?.codigoBalanca != null ? String(p.codigoBalanca) : '',
+    // Produto por unidade sem EAN: o código interno já está em `codigo`.
+    codigoBalanca: p?.codigoBalanca != null && !(p.unidade === 'UN' && !p.ean) ? String(p.codigoBalanca) : '',
     precoPromocional: p?.precoPromocional != null ? centavosParaTexto(p.precoPromocional) : '',
     promocaoInicio: p?.promocaoInicio ?? '',
     promocaoFim: p?.promocaoFim ?? '',
@@ -56,6 +58,30 @@ const MOTIVOS = {
   'ean-invalido': 'EAN inválido. Confira os dígitos.'
 } as const
 
+/** Código interno: número curto digitado no caixa no lugar do código de barras. */
+const CODIGO_INTERNO = /^\d{1,6}$/
+
+/**
+ * O campo "Código" guarda o EAN ou, no produto por unidade, o código interno; o produto
+ * pesado tem o código da balança no campo próprio. Os dois vão para colunas diferentes.
+ */
+function separarCodigo(c: Campos): { ean: string | null; codigoBalanca: number | null } {
+  const codigo = c.codigo.trim()
+  const balanca = c.codigoBalanca.trim()
+  if (balanca !== '' && !CODIGO_INTERNO.test(balanca)) throw new Error('Código na balança: até 6 dígitos')
+  const codigoBalanca = balanca === '' ? null : Number(balanca)
+
+  if (c.unidade === 'KG') {
+    if (CODIGO_INTERNO.test(codigo)) {
+      throw new Error('Produto pesado: o código curto vai no campo "Código na balança"')
+    }
+    return { ean: codigo || null, codigoBalanca }
+  }
+  if (CODIGO_INTERNO.test(codigo)) return { ean: null, codigoBalanca: Number(codigo) }
+  // EAN no campo; um código interno antigo (cadastrado junto com o EAN) continua valendo.
+  return { ean: codigo || null, codigoBalanca }
+}
+
 /** Converte os campos digitados em entrada; lança Error com a mensagem para o operador. */
 function montarEntrada(c: Campos): ProdutoEntrada {
   const precoVenda = lerMoeda(c.precoVenda)
@@ -69,8 +95,7 @@ function montarEntrada(c: Campos): ProdutoEntrada {
   if (estoqueAtual === null) throw new Error('Estoque atual inválido')
   const estoqueMinimo = c.estoqueMinimo.trim() === '' ? 0 : lerQuantidade(c.estoqueMinimo)
   if (estoqueMinimo === null) throw new Error('Estoque mínimo inválido')
-  const codigo = c.codigoBalanca.trim()
-  if (codigo !== '' && !/^\d{1,6}$/.test(codigo)) throw new Error('Código da balança: até 6 dígitos')
+  const { ean, codigoBalanca } = separarCodigo(c)
 
   let precoPromocional: number | null = null
   if (c.precoPromocional.trim()) {
@@ -91,8 +116,8 @@ function montarEntrada(c: Campos): ProdutoEntrada {
     promocaoFim: precoPromocional !== null ? c.promocaoFim || null : null,
     atacadoQuantidade,
     atacadoPreco,
-    ean: c.ean.trim() || null,
-    codigoBalanca: codigo === '' ? null : Number(codigo),
+    ean,
+    codigoBalanca,
     descricao: c.descricao,
     unidade: c.unidade,
     precoVenda,
@@ -120,7 +145,7 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
     if (produto || !sugestao) return base
     return {
       ...base,
-      ean: sugestao.ean ?? base.ean,
+      codigo: sugestao.ean ?? base.codigo,
       descricao: sugestao.descricao ? maiusculas(sugestao.descricao) : base.descricao,
       unidade: sugestao.unidade ?? base.unidade,
       precoCusto: sugestao.precoCusto != null ? centavosParaTexto(sugestao.precoCusto) : base.precoCusto
@@ -145,8 +170,13 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
     setCampos((c) => ({ ...c, [campo]: valor }))
 
   async function consultar(): Promise<void> {
-    const ean = campos.ean.trim()
+    const ean = campos.codigo.trim()
     if (!ean || consultando) return
+    // Código curto é interno: não há o que consultar na internet.
+    if (CODIGO_INTERNO.test(ean)) {
+      refDescricao.current?.focus()
+      return
+    }
     setConsultando(true)
     setErro(null)
     setInfo(null)
@@ -161,7 +191,7 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
       } else if (r.origem === 'openfoodfacts') {
         setCampos((c) => ({
           ...c,
-          ean: r.sugestao.ean,
+          codigo: r.sugestao.ean,
           descricao: c.descricao || maiusculas(r.sugestao.descricao)
         }))
         setInfo(`Dados do ${NOMES_BASES_OPEN_FACTS[r.sugestao.base]}. Confira a descrição e informe o preço.`)
@@ -173,6 +203,18 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
       setErro(mensagemErro(e))
     } finally {
       setConsultando(false)
+    }
+  }
+
+  async function gerarCodigo(): Promise<void> {
+    setErro(null)
+    setInfo(null)
+    setExistente(null)
+    try {
+      definir('codigo', String(await window.pdv.produtos.proximoCodigoInterno()))
+      refDescricao.current?.focus()
+    } catch (e) {
+      setErro(mensagemErro(e))
     }
   }
 
@@ -232,14 +274,18 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
 
         <div className="grade">
           <label className="largo">
-            EAN (código de barras)
+            {campos.unidade === 'UN' ? 'Código (EAN ou interno)' : 'EAN (código de barras)'}
             <div className="linha-campo">
               <input
                 ref={refEan}
-                value={campos.ean}
+                value={campos.codigo}
                 inputMode="numeric"
-                placeholder="Bipe ou digite e tecle Enter"
-                onChange={(e) => definir('ean', e.target.value)}
+                placeholder={
+                  campos.unidade === 'UN'
+                    ? 'Bipe o código de barras ou gere um código interno'
+                    : 'Bipe ou digite e tecle Enter'
+                }
+                onChange={(e) => definir('codigo', e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
@@ -250,7 +296,15 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
               <button type="button" onClick={() => void consultar()} disabled={consultando}>
                 {consultando ? 'Consultando…' : 'Consultar'}
               </button>
+              {campos.unidade === 'UN' && (
+                <button type="button" onClick={() => void gerarCodigo()}>
+                  Gerar código interno
+                </button>
+              )}
             </div>
+            {campos.unidade === 'UN' && (
+              <small>Sem código de barras? Gere um código interno curto: no caixa, digite o código e Enter.</small>
+            )}
           </label>
 
           {info && (
@@ -288,15 +342,19 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
             </select>
           </label>
 
-          <label>
-            Código na balança
-            <input
-              value={campos.codigoBalanca}
-              inputMode="numeric"
-              placeholder={campos.unidade === 'KG' ? 'PLU programado' : 'opcional'}
-              onChange={(e) => definir('codigoBalanca', e.target.value)}
-            />
-          </label>
+          {campos.unidade === 'KG' ? (
+            <label>
+              Código na balança
+              <input
+                value={campos.codigoBalanca}
+                inputMode="numeric"
+                placeholder="PLU programado"
+                onChange={(e) => definir('codigoBalanca', e.target.value)}
+              />
+            </label>
+          ) : (
+            <span />
+          )}
 
           <label>
             Preço de venda (R${campos.unidade === 'KG' ? '/kg' : ''})

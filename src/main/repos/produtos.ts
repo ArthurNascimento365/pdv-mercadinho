@@ -125,7 +125,7 @@ export function validarProdutoEntrada(dado: unknown): ProdutoEntrada {
   const codigoBalanca =
     d['codigoBalanca'] === null || d['codigoBalanca'] === undefined
       ? null
-      : inteiro(d['codigoBalanca'], 'Código da balança', 1, 999_999)
+      : inteiro(d['codigoBalanca'], 'Código interno/da balança', 1, 999_999)
 
   const precoVenda = inteiro(d['precoVenda'], 'Preço de venda', 0, PRECO_MAXIMO)
   if (precoVenda === 0) throw new ErroNegocio('Informe o preço de venda')
@@ -169,6 +169,24 @@ export function produtoPorCodigoBalanca(db: Banco, codigo: number): Produto | nu
     | LinhaProduto
     | undefined
   return l ? paraProduto(l) : null
+}
+
+/**
+ * Próximo código interno livre para produto sem EAN (ex.: mercearia vendida por unidade): o
+ * menor número a partir de 1 que nenhum produto usa (inativos contam, o código é único).
+ * O caixa digita esse código no lugar de bipar. Fica na mesma coluna do código da balança.
+ */
+export function proximoCodigoInterno(db: Banco): number {
+  const { livre } = db
+    .prepare(
+      `SELECT MIN(c.codigo + 1) AS livre FROM (
+         SELECT 0 AS codigo UNION ALL SELECT codigo_balanca FROM produtos WHERE codigo_balanca IS NOT NULL
+       ) c
+       WHERE NOT EXISTS (SELECT 1 FROM produtos p WHERE p.codigo_balanca = c.codigo + 1)`
+    )
+    .get() as { livre: number }
+  if (livre > 999_999) throw new ErroNegocio('Não há mais códigos internos livres')
+  return livre
 }
 
 /** Produto com a mesma descrição (sem acento/maiúscula), usado para casar linhas da importação. */
@@ -267,7 +285,7 @@ export function conferirDuplicados(db: Banco, entrada: ProdutoEntrada, idAtual: 
   if (entrada.codigoBalanca !== null) {
     const outro = produtoPorCodigoBalanca(db, entrada.codigoBalanca)
     if (outro && outro.id !== idAtual) {
-      throw new ErroNegocio(`O código de balança ${entrada.codigoBalanca} já é de "${outro.descricao}"`)
+      throw new ErroNegocio(`O código ${entrada.codigoBalanca} já é de "${outro.descricao}"`)
     }
   }
 }
