@@ -11,6 +11,9 @@ interface Props {
   onAbrirExistente: (produto: Produto) => void
 }
 
+/** Descrição de produto é sempre em maiúsculas (como no cupom e nas etiquetas). */
+const maiusculas = (texto: string): string => texto.toLocaleUpperCase('pt-BR')
+
 interface Campos {
   ean: string
   descricao: string
@@ -118,7 +121,7 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
     return {
       ...base,
       ean: sugestao.ean ?? base.ean,
-      descricao: sugestao.descricao ?? base.descricao,
+      descricao: sugestao.descricao ? maiusculas(sugestao.descricao) : base.descricao,
       unidade: sugestao.unidade ?? base.unidade,
       precoCusto: sugestao.precoCusto != null ? centavosParaTexto(sugestao.precoCusto) : base.precoCusto
     }
@@ -159,7 +162,7 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
         setCampos((c) => ({
           ...c,
           ean: r.sugestao.ean,
-          descricao: c.descricao || r.sugestao.descricao
+          descricao: c.descricao || maiusculas(r.sugestao.descricao)
         }))
         setInfo(`Dados do ${NOMES_BASES_OPEN_FACTS[r.sugestao.base]}. Confira a descrição e informe o preço.`)
       } else {
@@ -267,7 +270,13 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
               ref={refDescricao}
               value={campos.descricao}
               maxLength={120}
-              onChange={(e) => definir('descricao', e.target.value)}
+              onChange={(e) => {
+                // Descrição sempre em maiúsculas; o cursor fica onde estava (edição no meio do texto).
+                const campo = e.target
+                const { selectionStart: ini, selectionEnd: fim } = campo
+                definir('descricao', maiusculas(campo.value))
+                requestAnimationFrame(() => campo.setSelectionRange(ini, fim))
+              }}
             />
           </label>
 
