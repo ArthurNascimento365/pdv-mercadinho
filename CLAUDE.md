@@ -30,6 +30,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - **25/10 — visual novo** (sistema de design): Vender, Início, Caixa, listas, Configurações e
   Backup. Tema escuro adiado pelo usuário; Relatórios, Pagamento e modais só herdaram os tokens.
 - **25/10 — descrição do produto em maiúsculas** ao digitar no cadastro.
+- **26/10 — pagamento dividido mais claro** (Restante/Metade, aviso do que falta, remover cada pagamento).
 - **26/10 — código interno** para produto sem EAN (campo único "Código (EAN ou interno)" + Gerar).
 - Instalador `dist/PDV Mercadinho Setup 0.1.6.exe` gerado em 26/10/2026 (visual novo,
   descrição em maiúsculas e código interno).
@@ -191,6 +192,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - Caixa (tela Vender): Enter lança o código; `3*código` multiplica; PLU de até 6 dígitos
   digitado à mão pede o peso; F2 busca, F5/F6 desconto item/venda, F7/F8 cancela item/venda,
   F9 cancela a última venda finalizada, F10 pagamento (F1–F4 escolhe a forma).
+  Pagamento dividido: lança uma parte numa forma (Enter), escolhe a próxima para o restante;
+  botões Restante/Metade, lista de pagamentos lançados com "remover" em cada um (F8 = último).
   Layout: campo de código no topo e, logo abaixo, a barra de botões clicáveis (mesmas ações dos
   atalhos, mapa `acoes`). Quantidade e desconto do item se editam com um clique na lista
   (`alterarQuantidade` no main; etiqueta de balança não muda a quantidade). Botões e células

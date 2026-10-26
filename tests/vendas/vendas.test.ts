@@ -190,6 +190,23 @@ describe('vendas', () => {
       expect(v.troco).toBe(253)
     })
 
+    it('dois cartões, e Pix + cartão, fecham a venda sem troco', () => {
+      adicionarPagamento(db, 'credito', 1000)
+      adicionarPagamento(db, 'credito', 1247) // segundo cartão
+      expect(finalizarVenda(db)).toMatchObject({ pago: 2247, troco: 0 })
+
+      bipar(EAN_LEITE, 3000)
+      adicionarPagamento(db, 'pix', 2000)
+      expect(() => adicionarPagamento(db, 'debito', 248)).toThrow(/maior que o restante \(R\$\s2,47\)/)
+      adicionarPagamento(db, 'debito', 247)
+      const v = finalizarVenda(db)
+      expect(v.pagamentos.map((p) => [p.forma, p.valor])).toEqual([
+        ['pix', 2000],
+        ['debito', 247]
+      ])
+      expect(v.troco).toBe(0)
+    })
+
     it('cartão e Pix não passam do restante', () => {
       expect(() => adicionarPagamento(db, 'credito', 2248)).toThrow(/maior que o restante/)
       expect(() => adicionarPagamento(db, 'cheque', 100)).toThrow(/Forma de pagamento/)

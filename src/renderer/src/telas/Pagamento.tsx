@@ -26,6 +26,8 @@ export function Pagamento({ venda, onAtualizar, onFinalizada, onFechar }: Props)
   const [erro, setErro] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const [modal, setModal] = useState<Modal>(null)
+  /** Aviso depois de lançar uma parte: quanto falta e que dá para escolher outra forma. */
+  const [lancado, setLancado] = useState<string | null>(null)
   const campo = useRef<HTMLInputElement>(null)
 
   const quitada = venda.restante === 0
@@ -50,8 +52,21 @@ export function Pagamento({ venda, onAtualizar, onFinalizada, onFechar }: Props)
   }
 
   async function lancar(centavos: number, senha: string | null): Promise<void> {
-    onAtualizar(await window.pdv.vendas.adicionarPagamento(forma, centavos, senha))
+    const v = await window.pdv.vendas.adicionarPagamento(forma, centavos, senha)
+    onAtualizar(v)
+    setLancado(
+      v.restante > 0
+        ? `${formatarMoeda(centavos)} em ${FORMAS_PAGAMENTO[forma].toLowerCase()} lançado. Falta ${formatarMoeda(v.restante)}: escolha a próxima forma.`
+        : null
+    )
     setForma('dinheiro')
+  }
+
+  /** Valor rápido no campo: o restante todo ou a metade (para dividir em duas formas). */
+  function preencher(centavos: number): void {
+    setValor(centavosParaTexto(centavos))
+    campo.current?.focus()
+    requestAnimationFrame(() => campo.current?.select())
   }
 
   async function executar(acao: () => Promise<void>): Promise<void> {
@@ -89,11 +104,16 @@ export function Pagamento({ venda, onAtualizar, onFinalizada, onFechar }: Props)
       }
     })
 
-  const removerUltimo = (): Promise<void> =>
+  const remover = (pagamentoId: number): Promise<void> =>
     executar(async () => {
-      const ultimo = venda.pagamentos.at(-1)
-      if (ultimo) onAtualizar(await window.pdv.vendas.removerPagamento(ultimo.id))
+      onAtualizar(await window.pdv.vendas.removerPagamento(pagamentoId))
+      setLancado(null)
     })
+
+  const removerUltimo = async (): Promise<void> => {
+    const ultimo = venda.pagamentos.at(-1)
+    if (ultimo) await remover(ultimo.id)
+  }
 
   useTeclas(
     {
@@ -138,15 +158,28 @@ export function Pagamento({ venda, onAtualizar, onFinalizada, onFechar }: Props)
         </div>
 
         {venda.pagamentos.length > 0 && (
-          <ul className="pag-lista">
-            {venda.pagamentos.map((p) => (
-              <li key={p.id}>
-                <span>{FORMAS_PAGAMENTO[p.forma]}</span>
-                <span>{formatarMoeda(p.valor)}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="pag-lancados">
+            <span className="cartao-rotulo">Pagamentos lançados</span>
+            <ul className="pag-lista">
+              {venda.pagamentos.map((p) => (
+                <li key={p.id}>
+                  <span>{FORMAS_PAGAMENTO[p.forma]}</span>
+                  <span className="espaco" />
+                  <b>{formatarMoeda(p.valor)}</b>
+                  <button
+                    className="link acao-perigo"
+                    title="Remover este pagamento"
+                    onClick={() => void remover(p.id)}
+                    disabled={ocupado}
+                  >
+                    remover
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
+        {lancado && !quitada && <p className="aviso">{lancado}</p>}
 
         {!quitada && (
           <>
@@ -160,14 +193,32 @@ export function Pagamento({ venda, onAtualizar, onFinalizada, onFechar }: Props)
             <label>
               Valor em {FORMAS_PAGAMENTO[forma].toLowerCase()}
               {forma === 'pix' && ' (confira o recebimento no celular antes de confirmar)'}
-              <input
-                ref={campo}
-                className="campo-grande"
-                inputMode="decimal"
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
-              />
+              <div className="pag-valor">
+                <input
+                  ref={campo}
+                  className="campo-grande"
+                  inputMode="decimal"
+                  value={valor}
+                  onChange={(e) => setValor(e.target.value)}
+                />
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => preencher(venda.restante)}>
+                  Restante
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => preencher(Math.ceil(venda.restante / 2))}
+                >
+                  Metade
+                </button>
+              </div>
             </label>
+            {venda.pagamentos.length === 0 && (
+              <p className="dica">
+                Para dividir (ex.: parte no Pix e parte no cartão, ou dois cartões), digite só o valor desta forma e
+                tecle Enter; depois escolha a próxima forma para o restante.
+              </p>
+            )}
             {forma === 'pix' && <QrPix valor={lerMoeda(valor)} vendaId={venda.id} />}
           </>
         )}

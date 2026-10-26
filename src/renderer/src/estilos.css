@@ -1099,9 +1099,28 @@ button.acao-perigo kbd {
 
 .pag-lista li {
   display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
-  border-bottom: 1px solid var(--fundo);
+  align-items: center;
+  gap: var(--e-3);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--borda);
+  font-variant-numeric: tabular-nums;
+}
+
+.pag-lancados {
+  display: grid;
+  gap: var(--e-1);
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--r-2);
+  background: var(--superficie-2);
+}
+
+.pag-valor {
+  display: flex;
+  gap: var(--e-2);
+}
+
+.pag-valor input {
+  flex: 1;
 }
 
 .pag-formas {
