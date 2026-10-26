@@ -97,6 +97,20 @@ describe('serviço de impressão', () => {
       expect(t1).toContain('Troco')
     })
 
+    it('cupom mostra "Total recebido" só com pagamento dividido ou troco', () => {
+      const s = new ServicoImpressao(db, transportesFalsos())
+      const linhas = (id: number) => s.previa('venda', id).linhas.map((l) => l.texto)
+      const recebido = (id: number) => linhas(id).find((l) => l.startsWith('Total recebido'))
+
+      const dividida = vender([['pix', 1000], ['dinheiro', 2000]]) // 22,47 → troco 7,53
+      expect(recebido(dividida.id)).toMatch(/30,00$/)
+      const l = linhas(dividida.id)
+      expect(l.findIndex((x) => x.startsWith('Total recebido'))).toBe(l.findIndex((x) => x.startsWith('Troco')) - 1)
+
+      expect(recebido(vender([['credito', 1000], ['credito', 1247]]).id)).toMatch(/22,47$/)
+      expect(recebido(vender([['pix', 2247]]).id)).toBeUndefined()
+    })
+
     it('Pix: imprime sem abrir a gaveta', async () => {
       configurar({ modo: 'rede', host: '192.168.0.50' })
       const t = transportesFalsos()

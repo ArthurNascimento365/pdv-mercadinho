@@ -74,6 +74,10 @@ export function cupomVenda(venda: Venda, loja: ContextoLoja, caixa: { id: number
   for (const p of venda.pagamentos) {
     doc.push({ tipo: 'colunas', esquerda: FORMAS_PAGAMENTO[p.forma], direita: valor(p.valor) })
   }
+  // Pagamento dividido ou com troco: a soma das formas, para o cliente conferir sem fazer conta.
+  if (venda.pagamentos.length > 1 || venda.troco > 0) {
+    doc.push({ tipo: 'colunas', esquerda: 'Total recebido', direita: valor(venda.pago), negrito: true })
+  }
   if (venda.troco > 0) doc.push({ tipo: 'colunas', esquerda: 'Troco', direita: valor(venda.troco), negrito: true })
 
   const itens = venda.itens.filter((x) => !x.cancelado).length
