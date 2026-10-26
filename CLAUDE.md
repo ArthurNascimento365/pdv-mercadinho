@@ -30,11 +30,12 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - **25/10 — visual novo** (sistema de design): Vender, Início, Caixa, listas, Configurações e
   Backup. Tema escuro adiado pelo usuário; Relatórios, Pagamento e modais só herdaram os tokens.
 - **25/10 — descrição do produto em maiúsculas** ao digitar no cadastro.
-- **26/10 — pagamento dividido mais claro** (Restante/Metade, aviso do que falta, remover cada pagamento).
+- **26/10 — pagamento dividido mais claro** (Restante/Metade, aviso do que falta, remover cada pagamento)
+  e cupom com "Total recebido" quando há mais de uma forma ou troco.
 - **26/10 — código interno** para produto sem EAN (campo único "Código (EAN ou interno)" + Gerar).
-- Instalador `dist/PDV Mercadinho Setup 0.1.6.exe` gerado em 26/10/2026 (visual novo,
-  descrição em maiúsculas e código interno).
-  Schema do banco na versão 7. 297 testes (29 arquivos).
+- Instalador `dist/PDV Mercadinho Setup 0.1.7.exe` gerado em 26/10/2026 (visual novo,
+  descrição em maiúsculas, código interno e pagamento dividido).
+  Schema do banco na versão 7. 299 testes (29 arquivos).
 
 ### Em andamento
 
@@ -87,7 +88,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.7.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.8.
 4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
