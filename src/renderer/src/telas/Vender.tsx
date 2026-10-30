@@ -29,7 +29,8 @@ const qtd = (q: number, unidade: 'UN' | 'KG'): string =>
 
 /**
  * Barra de ações do caixa, agrupada pelo que a ação afeta. Cada botão também tem a tecla
- * de atalho; F10 (pagamento) fica no painel do total e Esc no cabeçalho.
+ * de atalho; o pagamento (Enter com o campo vazio, ou F10) fica no painel do total e Esc no
+ * cabeçalho.
  */
 const GRUPOS: { nome: string; botoes: { tecla: string; rotulo: string; perigo?: boolean }[] }[] = [
   {
@@ -302,7 +303,8 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   useTeclas(
     {
       ...acoes,
-      Enter: () => void lancarCodigo(),
+      // Enter com código lança o item; com o campo vazio (e itens na venda) abre o pagamento.
+      Enter: () => (codigo.trim() ? void lancarCodigo() : temItens && setModal({ tipo: 'pagamento' })),
       ArrowUp: () => setSelecionado((s) => Math.max(0, s - 1)),
       ArrowDown: () => setSelecionado((s) => Math.min(itens.length - 1, s + 1))
     },
@@ -345,7 +347,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
           }}
         />
         <span className="caixa-codigo-dica">
-          Bipe ou digite o código · <b>3*código</b> multiplica · Enter lança
+          Bipe ou digite o código · <b>3*código</b> multiplica · Enter vazio vai ao pagamento
         </span>
       </label>
 
@@ -506,7 +508,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => acoes['F10']!()}
             >
-              <kbd>F10</kbd> Pagamento
+              <kbd>Enter</kbd> Pagamento
             </button>
             {venda?.clienteNome && (
               <p className="caixa-cliente">

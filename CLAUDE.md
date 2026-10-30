@@ -192,7 +192,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   ao subtotal (reduz sozinho se itens forem cancelados).
 - Caixa (tela Vender): Enter lança o código; `3*código` multiplica; PLU de até 6 dígitos
   digitado à mão pede o peso; F2 busca, F5/F6 desconto item/venda, F7/F8 cancela item/venda,
-  F9 cancela a última venda finalizada, F10 pagamento (F1–F4 escolhe a forma).
+  F9 cancela a última venda finalizada. Pagamento: Enter com o campo de código vazio (e itens na
+  venda) ou F10; dentro dele F1–F5 escolhe a forma, Enter lança e, com tudo pago, finaliza.
   Pagamento dividido: lança uma parte numa forma (Enter), escolhe a próxima para o restante;
   botões Restante/Metade, lista de pagamentos lançados com "remover" em cada um (F8 = último).
   Layout: campo de código no topo e, logo abaixo, a barra de botões clicáveis (mesmas ações dos
