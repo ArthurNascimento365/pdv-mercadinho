@@ -52,7 +52,12 @@
   --fs-4: 18px;
   --fs-5: 22px;
   --fs-6: 28px;
-  --fs-total: clamp(40px, 4.2vw, 64px);
+  /* Total a pagar: lido pelo cliente do outro lado do balcão (≥ 48 px) */
+  --fs-total: clamp(48px, 4.6vw, 88px);
+  /* Lista e destaque da tela Vender, legíveis a 1,5 m */
+  --fs-lista-cliente: 21px;
+  --fs-destaque: 28px;
+  --fs-destaque-valor: 44px;
   --fonte-codigo: Consolas, 'Courier New', monospace;
 
   /* Espaçamento, cantos e sombras */
@@ -521,6 +526,8 @@ p.erro {
 .fundo-modal {
   position: fixed;
   inset: 0;
+  /* Acima do cabeçalho fixo das tabelas (z-index 1), que senão cobre o topo da janela */
+  z-index: 20;
   display: grid;
   place-items: center;
   background: rgb(0 0 0 / 0.35);
@@ -633,7 +640,7 @@ button.perigo kbd {
 /* Frente de caixa (tela Vender) */
 .caixa {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(300px, 25vw, 420px);
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 27vw, 520px);
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: var(--e-3) var(--e-4);
   min-height: 0;
@@ -745,7 +752,48 @@ button.acao-perigo kbd {
 }
 
 .caixa-itens .tabela td {
-  font-size: 17px;
+  padding: 12px 16px;
+  font-size: var(--fs-lista-cliente);
+}
+
+.caixa-itens .tabela tr.selecionada td {
+  font-weight: 600;
+}
+
+.caixa-itens .tabela tr.selecionada td:first-child {
+  box-shadow: inset 5px 0 0 var(--marca-600);
+}
+
+/* Oferta/atacado legível de longe */
+.caixa-itens .etiqueta.oferta {
+  padding: 2px 10px;
+  font-size: var(--fs-2);
+  font-weight: 700;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+
+/* Desconto do item em verde, como ganho do cliente */
+.caixa-col-desc,
+.caixa-col-desc .celula-editavel {
+  color: var(--sucesso);
+  font-weight: 600;
+}
+
+/* Para o cliente a célula editável não parece campo: a borda só aparece para o operador
+   ao passar o mouse ou na linha escolhida. */
+.caixa-itens .celula-editavel {
+  border-color: transparent;
+}
+
+.caixa-itens tr:hover .celula-editavel,
+.caixa-itens tr.selecionada .celula-editavel {
+  border-color: var(--borda-forte);
+}
+
+.caixa-itens .celula-vazia {
+  color: var(--texto-fraco);
+  font-weight: 400;
 }
 
 .caixa-itens tbody tr {
@@ -773,6 +821,47 @@ button.acao-perigo kbd {
 .tabela tr.cancelado td {
   color: var(--texto-fraco);
   text-decoration: line-through;
+}
+
+/* Na venda, item cancelado fica claro para o cliente: vermelho, riscado e marcado */
+.caixa-itens .tabela tr.cancelado td {
+  background: var(--perigo-fundo);
+  color: var(--perigo);
+}
+
+/* O número e a marca "cancelado" não ficam riscados (só o produto e os valores) */
+.caixa-itens .tabela tr.cancelado td.caixa-seq {
+  text-decoration: none;
+}
+
+.caixa-itens .tabela tr.cancelado .caixa-seq::after {
+  content: 'cancelado';
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.caixa-obrigado {
+  display: grid;
+  place-content: center;
+  gap: var(--e-2);
+  /* Ocupa o espaço abaixo do cabeçalho da lista sem criar rolagem */
+  min-height: calc(100% - 48px);
+  padding: var(--e-5);
+  text-align: center;
+  animation: entrar-aviso 150ms ease-out;
+}
+
+.caixa-obrigado strong {
+  color: var(--marca-700);
+  font-size: clamp(32px, 3vw, 56px);
+}
+
+.caixa-obrigado span {
+  color: var(--texto-suave);
+  font-size: var(--fs-4);
 }
 
 .caixa-vazio {
@@ -810,9 +899,22 @@ button.acao-perigo kbd {
 
 .caixa-aviso-neutro {
   background: var(--superficie-2);
-  color: var(--texto-fraco);
+  color: var(--texto-suave);
+  font-size: var(--fs-3);
   font-weight: 400;
   animation: none;
+}
+
+.caixa-aviso-neutro b {
+  color: var(--texto);
+}
+
+.caixa-economia {
+  margin-left: auto;
+}
+
+.caixa-economia b {
+  color: var(--sucesso);
 }
 
 @keyframes entrar-aviso {
@@ -875,9 +977,26 @@ button.acao-perigo kbd {
   text-transform: uppercase;
 }
 
+/* "Acabou de passar": o que o cliente confere a cada bipe */
 .caixa-item {
   display: grid;
   gap: var(--e-1);
+  border: 2px solid var(--marca-600);
+}
+
+.caixa-item .cartao-rotulo {
+  color: var(--marca-600);
+}
+
+.caixa-item-novo {
+  animation: destacar 150ms ease-out;
+}
+
+@keyframes destacar {
+  from {
+    background: var(--marca-100);
+    transform: scale(0.98);
+  }
 }
 
 .caixa-item strong {
@@ -885,8 +1004,8 @@ button.acao-perigo kbd {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: var(--fs-4);
-  line-height: 1.3;
+  font-size: var(--fs-destaque);
+  line-height: 1.2;
 }
 
 .caixa-item-linha {
@@ -895,12 +1014,36 @@ button.acao-perigo kbd {
   align-items: baseline;
   gap: var(--e-2);
   color: var(--texto-suave);
+  font-size: var(--fs-5);
+  font-variant-numeric: tabular-nums;
 }
 
 .caixa-item-linha b {
   color: var(--texto);
-  font-size: var(--fs-5);
-  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-destaque-valor);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.caixa-item-desconto {
+  color: var(--sucesso);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.caixa-item-cancelado {
+  border-color: var(--perigo);
+  background: var(--perigo-fundo);
+  animation: tremer 150ms ease-in-out 2;
+}
+
+.caixa-item-cancelado .cartao-rotulo,
+.caixa-item-cancelado .caixa-item-linha b {
+  color: var(--perigo);
+}
+
+.caixa-item-cancelado strong {
+  text-decoration: line-through;
 }
 
 .linha-total {
@@ -917,8 +1060,15 @@ button.acao-perigo kbd {
   font-weight: 600;
 }
 
+.caixa-resumo .linha-total {
+  font-size: var(--fs-5);
+}
+
+/* Desconto é ganho do cliente: verde */
+.caixa-desconto,
 .caixa-desconto b {
-  color: var(--perigo);
+  color: var(--sucesso);
+  font-weight: 700;
 }
 
 .caixa-total {
@@ -931,21 +1081,34 @@ button.acao-perigo kbd {
 }
 
 .caixa-total span {
-  font-size: var(--fs-3);
-  opacity: 0.85;
+  font-size: var(--fs-5);
+  opacity: 0.9;
 }
 
 .caixa-total strong {
   font-size: var(--fs-total);
   font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -1px;
+  line-height: 1.05;
+  letter-spacing: -1.5px;
   text-align: right;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
 .caixa-troco {
   background: var(--troco-fundo);
+  animation: destacar 150ms ease-out;
+}
+
+.caixa-pago {
+  background: var(--marca-600);
+}
+
+.caixa-pago strong {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--e-3);
 }
 
 .caixa-finalizada {
@@ -1002,6 +1165,21 @@ button.acao-perigo kbd {
   }
 
   .caixa-itens .tabela td {
+    padding: 8px 10px;
+    font-size: var(--fs-4);
+  }
+
+  .caixa {
+    --fs-destaque: 20px;
+    --fs-destaque-valor: 30px;
+  }
+
+  .caixa-item-linha {
+    font-size: var(--fs-3);
+  }
+
+  .caixa-resumo .linha-total,
+  .caixa-total span {
     font-size: var(--fs-3);
   }
 }
@@ -1054,13 +1232,37 @@ button.acao-perigo kbd {
 
 /* Pagamento */
 .modal-pagamento {
-  width: min(640px, 94vw);
+  width: min(760px, 94vw);
 }
 
 .pag-resumo {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr 1.6fr;
   gap: 10px;
+}
+
+/* "Falta pagar" / "Seu troco": o que o cliente lê de longe */
+.pag-resumo .pag-falta strong,
+.pag-resumo .pag-troco strong {
+  font-size: clamp(32px, 3vw, 48px);
+  line-height: 1.05;
+}
+
+.pag-resumo .pag-falta span,
+.pag-resumo .pag-troco span {
+  font-size: var(--fs-3);
+  font-weight: 600;
+}
+
+.pag-resumo .pag-falta,
+.pag-resumo .pag-falta span {
+  color: var(--perigo);
+}
+
+.pag-resumo .pag-troco,
+.pag-resumo .pag-troco span {
+  background: var(--troco-fundo);
+  color: var(--sobre-marca);
 }
 
 .pag-resumo div {
@@ -1085,9 +1287,6 @@ button.acao-perigo kbd {
   background: var(--perigo-fundo);
 }
 
-.pag-resumo .pag-troco {
-  background: var(--info-fundo);
-}
 
 .pag-lista {
   display: grid;
@@ -1103,6 +1302,7 @@ button.acao-perigo kbd {
   gap: var(--e-3);
   padding: 6px 0;
   border-bottom: 1px solid var(--borda);
+  font-size: var(--fs-4);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1526,7 +1726,27 @@ textarea {
 }
 
 .pix strong {
-  font-size: 26px;
+  font-size: var(--fs-6);
+}
+
+/* QR do Pix na venda: grande para o cliente ler do outro lado do balcão */
+.pix .qr {
+  width: 260px;
+  height: 260px;
+}
+
+.pix-cliente {
+  margin: var(--e-1) 0 var(--e-2);
+  font-size: var(--fs-4);
+  font-weight: 600;
+}
+
+/* Janela baixa (1024×700): o QR encolhe para a janela de pagamento caber sem rolar */
+@media (max-height: 820px) {
+  .pix .qr {
+    width: 180px;
+    height: 180px;
+  }
 }
 
 .qr {

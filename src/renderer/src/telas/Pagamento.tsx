@@ -152,7 +152,7 @@ export function Pagamento({ venda, onAtualizar, onFinalizada, onFechar }: Props)
             <strong>{formatarMoeda(venda.pago)}</strong>
           </div>
           <div className={quitada ? 'pag-troco' : 'pag-falta'}>
-            <span>{quitada ? 'Troco' : 'Falta'}</span>
+            <span>{quitada ? 'Seu troco' : 'Falta pagar'}</span>
             <strong>{formatarMoeda(quitada ? trocoPrevisto : venda.restante)}</strong>
           </div>
         </div>

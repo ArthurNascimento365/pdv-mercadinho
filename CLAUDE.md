@@ -34,6 +34,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   e cupom com "Total recebido" quando há mais de uma forma ou troco.
 - **26/10 — código interno** para produto sem EAN (campo único "Código (EAN ou interno)" + Gerar).
 - **30/10 — Enter com o campo de código vazio abre o pagamento** (F10 continua valendo).
+- **01/11 — tela Vender pensada para o cliente** (destaque do item, descontos, total, troco e QR
+  maiores) e correção do cabeçalho da lista que cobria a janela de pagamento.
 - Instalador `dist/PDV Mercadinho Setup 0.1.8.exe` gerado em 30/10/2026 (visual novo,
   descrição em maiúsculas, código interno, pagamento dividido e Enter para pagar).
   Schema do banco na versão 7. 299 testes (29 arquivos).
@@ -203,6 +205,12 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   usam `onMouseDown` com `preventDefault` para o campo de código não roubar o foco do editor.
   Desconto na venda (F6) abre `DescontoVenda` (Modais.tsx): escolha entre porcentagem (F1) e
   valor em reais (F2), com prévia do total; vazio ou 0 tira o desconto.
+  Pensada também para o cliente a 1,5 m: cartão "Acabou de passar" (último item ativo; um item
+  cancelado fica ali em vermelho por 5 s, `recemCancelado`), "Subtotal" antes dos descontos e
+  "Descontos" em verde (`economia` = bruto − total), total com `--fs-total` (≥ 48 px), lista com
+  `--fs-lista-cliente`, cancelado em vermelho, "Obrigado pela preferência!" + "Seu troco" ao
+  finalizar, e no pagamento "Falta pagar"/"Seu troco" grandes e QR do Pix de 260 px. Janelas
+  (`.fundo-modal`) ficam acima do cabeçalho fixo das tabelas (z-index).
 - Controle de caixa (Configurações → Caixa, chave `caixa.controle`): ligado por padrão. Desligado
   (dono único), `garantirCaixaAberto` abre sozinho um caixa em nome de "Dono" (fundo 0) quando
   precisa, e Início/Vender usam `caixa:paraVender`; sangria e fechamento seguem opcionais no F4.

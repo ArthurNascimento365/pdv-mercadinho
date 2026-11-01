@@ -83,7 +83,7 @@ function CelulaEditavel({
   if (!editando) {
     return (
       <button
-        className="celula-editavel"
+        className={`celula-editavel ${texto ? '' : 'celula-vazia'}`}
         tabIndex={-1}
         title="Clique para editar"
         // Não tira o foco do campo de código: senão ele o retoma e rouba o do editor.
@@ -128,6 +128,8 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   const [venda, setVenda] = useState<Venda | null>(null)
   /** Venda recém-finalizada: mostra o troco até o próximo item. */
   const [finalizada, setFinalizada] = useState<Venda | null>(null)
+  /** Item que acabou de ser cancelado: fica em destaque alguns segundos para o cliente ver. */
+  const [recemCancelado, setRecemCancelado] = useState<ItemVenda | null>(null)
   const [selecionado, setSelecionado] = useState(-1)
   const [codigo, setCodigo] = useState('')
   const [modal, setModal] = useState<Modal | null>(null)
@@ -139,8 +141,15 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
 
   const itens = venda?.itens ?? []
   const temItens = itens.some((i) => !i.cancelado)
-  const itensValidos = itens.filter((i) => !i.cancelado).length
+  const ativos = itens.filter((i) => !i.cancelado)
+  const itensValidos = ativos.length
+  const cancelados = itens.length - ativos.length
   const item = itens[selecionado] ?? null
+  // Para o cliente: o item que acabou de passar (ou o que acabou de sair, por alguns segundos).
+  const destaque = recemCancelado ?? ativos.at(-1) ?? null
+  // Subtotal antes de qualquer desconto; a diferença para o total é o que o cliente economizou.
+  const bruto = ativos.reduce((s, i) => s + i.totalBruto, 0)
+  const economia = Math.max(0, bruto - (venda?.total ?? 0))
 
   // Retoma a venda que estava aberta (inclusive depois de uma queda do PDV).
   useEffect(() => {
@@ -190,8 +199,15 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   function itemAdicionado(v: Venda): void {
     atualizar(v)
     setFinalizada(null)
+    setRecemCancelado(null)
     setAviso(null)
   }
+
+  useEffect(() => {
+    if (!recemCancelado) return
+    const t = setTimeout(() => setRecemCancelado(null), 5000)
+    return () => clearTimeout(t)
+  }, [recemCancelado])
 
   const lancarCodigo = (): Promise<void> =>
     executar(async () => {
@@ -406,7 +422,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
                     />
                   </td>
                   <td className="num">{formatarMoeda(i.precoUnitario)}</td>
-                  <td className="num">
+                  <td className="num caixa-col-desc">
                     <CelulaEditavel
                       texto={i.desconto ? `−${formatarMoeda(i.desconto)}` : ''}
                       inicial={i.desconto ? centavosParaTexto(i.desconto) : ''}
@@ -420,13 +436,22 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
               ))}
             </tbody>
           </table>
-          {itens.length === 0 && (
-            <div className="caixa-vazio">
-              <Icone nome="carrinho" tamanho={40} />
-              <strong>Caixa livre</strong>
-              <span>Bipe um produto para começar.</span>
-            </div>
-          )}
+          {itens.length === 0 &&
+            (finalizada ? (
+              <div className="caixa-obrigado">
+                <strong>Obrigado pela preferência!</strong>
+                <span>
+                  Venda nº {finalizada.id} ·{' '}
+                  {finalizada.pagamentos.map((p) => `${FORMAS_PAGAMENTO[p.forma]} ${formatarMoeda(p.valor)}`).join(' + ')}
+                </span>
+              </div>
+            ) : (
+              <div className="caixa-vazio">
+                <Icone nome="carrinho" tamanho={40} />
+                <strong>Caixa livre</strong>
+                <span>Bipe um produto para começar.</span>
+              </div>
+            ))}
         </div>
         {aviso ? (
           <p className={`caixa-aviso ${aviso.erro ? 'caixa-aviso-erro' : ''}`} key={aviso.texto}>
@@ -434,9 +459,17 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
             {aviso.texto}
           </p>
         ) : (
-          item && (
+          itens.length > 0 && (
             <p className="caixa-aviso caixa-aviso-neutro">
-              {itensValidos} {itensValidos === 1 ? 'item' : 'itens'} · ↑ ↓ escolhe o item
+              <b>
+                {itensValidos} {itensValidos === 1 ? 'item' : 'itens'}
+              </b>
+              {cancelados > 0 && ` · ${cancelados} ${cancelados === 1 ? 'cancelado' : 'cancelados'}`}
+              {economia > 0 && (
+                <span className="caixa-economia">
+                  você economizou <b>{formatarMoeda(economia)}</b>
+                </span>
+              )}
             </p>
           )
         )}
@@ -458,24 +491,42 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
                 </div>
               ))}
             </div>
-            <div className="caixa-total caixa-troco">
-              <span>Troco</span>
-              <strong>{formatarMoeda(finalizada.troco)}</strong>
-            </div>
+            {finalizada.troco > 0 ? (
+              <div className="caixa-total caixa-troco">
+                <span>Seu troco</span>
+                <strong>{formatarMoeda(finalizada.troco)}</strong>
+              </div>
+            ) : (
+              <div className="caixa-total caixa-pago">
+                <span>Pagamento recebido</span>
+                <strong>
+                  <Icone nome="ok" tamanho={44} /> Pago
+                </strong>
+              </div>
+            )}
           </>
         ) : (
           <>
-            <div className="painel-cartao caixa-item">
-              <span className="cartao-rotulo">Último item</span>
-              {item ? (
+            <div
+              // A chave muda a cada bipe (ou mudança de quantidade): o cartão "pisca" para o cliente ver.
+              key={destaque ? `${destaque.id}-${destaque.quantidade}-${destaque.total}-${!!recemCancelado}` : 'vazio'}
+              className={`painel-cartao caixa-item ${recemCancelado ? 'caixa-item-cancelado' : 'caixa-item-novo'}`}
+            >
+              <span className="cartao-rotulo">{recemCancelado ? 'Item cancelado' : 'Acabou de passar'}</span>
+              {destaque ? (
                 <>
-                  <strong>{item.descricao}</strong>
+                  <strong>{destaque.descricao}</strong>
                   <div className="caixa-item-linha">
                     <span>
-                      {qtd(item.quantidade, item.unidade)} × {formatarMoeda(item.precoUnitario)}
-                      {item.desconto > 0 && ` − ${formatarMoeda(item.desconto)}`}
+                      {qtd(destaque.quantidade, destaque.unidade)} × {formatarMoeda(destaque.precoUnitario)}
+                      {destaque.desconto > 0 && !recemCancelado && (
+                        <em className="caixa-item-desconto"> −{formatarMoeda(destaque.desconto)}</em>
+                      )}
                     </span>
-                    <b>{formatarMoeda(item.total)}</b>
+                    <b>
+                      {recemCancelado && '−'}
+                      {formatarMoeda(destaque.total)}
+                    </b>
                   </div>
                 </>
               ) : (
@@ -484,17 +535,15 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
             </div>
             <div className="painel-cartao caixa-resumo">
               <div className="linha-total">
-                <span>Itens</span>
-                <b>{itensValidos}</b>
+                <span>
+                  Subtotal ({itensValidos} {itensValidos === 1 ? 'item' : 'itens'})
+                </span>
+                <b>{formatarMoeda(bruto)}</b>
               </div>
-              <div className="linha-total">
-                <span>Subtotal</span>
-                <b>{formatarMoeda(venda?.subtotal ?? 0)}</b>
-              </div>
-              {(venda?.desconto ?? 0) > 0 && (
+              {economia > 0 && (
                 <div className="linha-total caixa-desconto">
-                  <span>Desconto</span>
-                  <b>−{formatarMoeda(venda!.desconto)}</b>
+                  <span>Descontos</span>
+                  <b>−{formatarMoeda(economia)}</b>
                 </div>
               )}
             </div>
@@ -601,6 +650,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
           rotuloSim="Cancelar item"
           onSim={async () => {
             atualizar(await window.pdv.vendas.cancelarItem(modal.item.id), false)
+            setRecemCancelado(modal.item)
             setModal(null)
           }}
           onFechar={() => setModal(null)}

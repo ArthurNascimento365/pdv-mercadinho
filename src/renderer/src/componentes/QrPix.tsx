@@ -50,8 +50,9 @@ export function QrPix({ valor, vendaId }: { valor: number | null; vendaId: numbe
       <div className="qr" dangerouslySetInnerHTML={{ __html: pix.svg }} />
       <div>
         <strong>{formatarMoeda(valor)}</strong>
+        <p className="pix-cliente">Aponte a câmera do app do seu banco</p>
         <p className="dica">
-          Cliente lê o QR no app do banco. Confira o recebimento no celular e só então tecle Enter. F7 imprime o QR.
+          Operador: confira o recebimento no celular e só então tecle Enter. F7 imprime o QR.
         </p>
       </div>
     </div>
