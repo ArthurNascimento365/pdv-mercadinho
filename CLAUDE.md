@@ -36,8 +36,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - **30/10 — Enter com o campo de código vazio abre o pagamento** (F10 continua valendo).
 - **01/11 — tela Vender pensada para o cliente** (destaque do item, descontos, total, troco e QR
   maiores) e correção do cabeçalho da lista que cobria a janela de pagamento.
-- Instalador `dist/PDV Mercadinho Setup 0.1.8.exe` gerado em 30/10/2026 (visual novo,
-  descrição em maiúsculas, código interno, pagamento dividido e Enter para pagar).
+- Instalador `dist/PDV Mercadinho Setup 0.1.9.exe` gerado em 01/11/2026 (visual novo,
+  descrição em maiúsculas, código interno, pagamento dividido, Enter para pagar e tela Vender
+  pensada para o cliente).
   Schema do banco na versão 7. 299 testes (29 arquivos).
 
 ### Em andamento
@@ -91,7 +92,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.9.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.10.
 4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
