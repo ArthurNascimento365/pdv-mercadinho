@@ -53,7 +53,7 @@ const api: PdvApi = {
       invocar('vendas:adicionarPagamento', forma, valor, senhaGerente),
     definirCliente: (clienteId) => invocar('vendas:definirCliente', clienteId),
     removerPagamento: (pagamentoId) => invocar('vendas:removerPagamento', pagamentoId),
-    finalizar: () => invocar('vendas:finalizar'),
+    finalizar: (comSaldoDevedor?: boolean) => invocar('vendas:finalizar', comSaldoDevedor === true),
     ultimaFinalizada: () => invocar('vendas:ultimaFinalizada'),
     cancelarFinalizada: (vendaId) => invocar('vendas:cancelarFinalizada', vendaId)
   },

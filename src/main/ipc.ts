@@ -286,7 +286,7 @@ export function registrarIpc({ db, caminhoBanco, impressao, backup }: ContextoIp
     return true
   })
   tratar('vendas:removerPagamento', (pagamentoId) => removerPagamento(db, pagamentoId))
-  tratar('vendas:finalizar', () => finalizarVenda(db))
+  tratar('vendas:finalizar', (comSaldoDevedor) => finalizarVenda(db, comSaldoDevedor === true))
   tratar('vendas:ultimaFinalizada', () => ultimaVendaFinalizada(db))
   tratar('vendas:cancelarFinalizada', (vendaId) => cancelarVendaFinalizada(db, vendaId))
 

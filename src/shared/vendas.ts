@@ -67,6 +67,8 @@ export interface Venda {
   /** Quanto ainda falta receber (nunca negativo). */
   restante: Centavos
   troco: Centavos
+  /** Parte do total que ficou em aberto ao finalizar (sem cliente): sai no cupom como SALDO DEVEDOR. */
+  saldoDevedor: Centavos
   caixaId: number | null
   /** Cliente identificado na venda (obrigatório para pagar no fiado). */
   clienteId: number | null

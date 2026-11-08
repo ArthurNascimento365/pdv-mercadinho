@@ -8,6 +8,7 @@ import { m005Fiado } from './migracoes/005_fiado'
 import { m006CustosLotes } from './migracoes/006_custos_lotes'
 import { m007Promocoes } from './migracoes/007_promocoes'
 import { m008TabelaAPrazo } from './migracoes/008_tabela_a_prazo'
+import { m009SaldoDevedor } from './migracoes/009_saldo_devedor'
 
 export interface Migracao {
   versao: number
@@ -16,7 +17,7 @@ export interface Migracao {
 }
 
 /** Lista ordenada. Nunca edite uma migração já distribuída: crie a próxima. */
-export const MIGRACOES: readonly Migracao[] = [m001Inicial, m002Produtos, m003Vendas, m004CaixaEstoqueEntradas, m005Fiado, m006CustosLotes, m007Promocoes, m008TabelaAPrazo]
+export const MIGRACOES: readonly Migracao[] = [m001Inicial, m002Produtos, m003Vendas, m004CaixaEstoqueEntradas, m005Fiado, m006CustosLotes, m007Promocoes, m008TabelaAPrazo, m009SaldoDevedor]
 
 export function versaoAtual(db: DatabaseSync): number {
   const linha = db.prepare('PRAGMA user_version').get() as { user_version: number }

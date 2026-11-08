@@ -576,8 +576,14 @@ p.erro {
 
 .acoes {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+}
+
+/* Pagamento: se a barra quebrar linha (tela de 1024), a ação principal continua à direita */
+.modal-pagamento .acoes .primario {
+  margin-left: auto;
 }
 
 .lista-erros {
@@ -1102,6 +1108,12 @@ button.acao-perigo kbd {
 
 .caixa-pago {
   background: var(--marca-600);
+}
+
+/* Venda fechada com parte em aberto: o cliente vê quanto ficou devendo */
+.caixa-saldo {
+  background: var(--perigo);
+  animation: destacar 150ms ease-out;
 }
 
 .caixa-pago strong {

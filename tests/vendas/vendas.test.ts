@@ -202,6 +202,20 @@ describe('vendas', () => {
       expect(vendaAberta(db)).toBeNull()
     })
 
+    it('finaliza com saldo devedor: o que falta fica registrado, sem cliente', () => {
+      adicionarPagamento(db, 'dinheiro', 2000)
+      expect(() => finalizarVenda(db)).toThrow(/Falta receber R\$\s2,47/)
+      const v = finalizarVenda(db, true)
+      expect(v).toMatchObject({ status: 'finalizada', pago: 2000, troco: 0, saldoDevedor: 247, clienteId: null })
+      expect(obterProduto(db, leite.id)!.estoqueAtual).toBe(7_000)
+    })
+
+    it('saldo devedor exige ao menos um pagamento; venda paga fica com saldo 0', () => {
+      expect(() => finalizarVenda(db, true)).toThrow(/pagou/)
+      adicionarPagamento(db, 'pix', 2247)
+      expect(finalizarVenda(db, true)).toMatchObject({ saldoDevedor: 0, troco: 0 })
+    })
+
     it('pagamentos múltiplos', () => {
       const v1 = adicionarPagamento(db, 'pix', 1000)
       expect(v1.restante).toBe(1247)

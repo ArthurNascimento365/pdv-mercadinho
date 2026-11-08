@@ -1,7 +1,7 @@
 import type { MovimentoCaixa, ResumoCaixa } from '@shared/caixa'
 import { formatarMoeda, quantidadeParaTexto } from '@shared/dinheiro'
 import type { Documento, LinhaDocumento } from '@shared/impressao'
-import { FORMAS_PAGAMENTO, type Venda } from '@shared/vendas'
+import { FORMAS_PAGAMENTO, type FormaPagamento, type Venda } from '@shared/vendas'
 
 export interface ContextoLoja {
   nome: string
@@ -12,6 +12,13 @@ export interface ContextoLoja {
 
 const real = (c: number): string => formatarMoeda(c).replace(/ /g, ' ')
 const valor = (c: number): string => real(c).replace(/^-?R\$ ?/, c < 0 ? '-' : '')
+
+/** Nome da forma de pagamento no cupom do cliente (cartão por extenso). */
+const FORMA_NO_CUPOM: Record<FormaPagamento, string> = {
+  ...FORMAS_PAGAMENTO,
+  debito: 'Cartão de Débito',
+  credito: 'Cartão de Crédito'
+}
 
 export function dataHora(iso: string | null): string {
   if (!iso) return ''
@@ -72,13 +79,17 @@ export function cupomVenda(venda: Venda, loja: ContextoLoja, caixa: { id: number
   }
   doc.push({ tipo: 'colunas', esquerda: 'TOTAL', direita: real(venda.total), negrito: true, grande: true })
   for (const p of venda.pagamentos) {
-    doc.push({ tipo: 'colunas', esquerda: FORMAS_PAGAMENTO[p.forma], direita: valor(p.valor) })
+    doc.push({ tipo: 'colunas', esquerda: FORMA_NO_CUPOM[p.forma], direita: valor(p.valor) })
   }
-  // Pagamento dividido ou com troco: a soma das formas, para o cliente conferir sem fazer conta.
-  if (venda.pagamentos.length > 1 || venda.troco > 0) {
+  // Pagamento dividido, com troco ou com saldo devedor: a soma das formas, para o cliente
+  // conferir sem fazer conta.
+  if (venda.pagamentos.length > 1 || venda.troco > 0 || venda.saldoDevedor > 0) {
     doc.push({ tipo: 'colunas', esquerda: 'Total recebido', direita: valor(venda.pago), negrito: true })
   }
   if (venda.troco > 0) doc.push({ tipo: 'colunas', esquerda: 'Troco', direita: valor(venda.troco), negrito: true })
+  if (venda.saldoDevedor > 0) {
+    doc.push({ tipo: 'colunas', esquerda: 'SALDO DEVEDOR', direita: real(venda.saldoDevedor), negrito: true, grande: true })
+  }
 
   const itens = venda.itens.filter((x) => !x.cancelado).length
   doc.push({ tipo: 'texto', texto: `${itens} ${itens === 1 ? 'item' : 'itens'}` }, { tipo: 'separador' })

@@ -98,7 +98,7 @@ export interface CanaisIpc {
   }
   'vendas:definirCliente': { args: [clienteId: number | null]; retorno: Venda }
   'vendas:removerPagamento': { args: [pagamentoId: number]; retorno: Venda }
-  'vendas:finalizar': { args: []; retorno: Venda }
+  'vendas:finalizar': { args: [comSaldoDevedor?: boolean]; retorno: Venda }
   'vendas:ultimaFinalizada': { args: []; retorno: Venda | null }
   'vendas:cancelarFinalizada': { args: [vendaId: number]; retorno: Venda }
 
@@ -235,7 +235,7 @@ export interface PdvApi {
     adicionarPagamento(forma: FormaPagamento, valor: Centavos, senhaGerente?: string | null): Promise<Venda>
     definirCliente(clienteId: number | null): Promise<Venda>
     removerPagamento(pagamentoId: number): Promise<Venda>
-    finalizar(): Promise<Venda>
+    finalizar(comSaldoDevedor?: boolean): Promise<Venda>
     ultimaFinalizada(): Promise<Venda | null>
     cancelarFinalizada(vendaId: number): Promise<Venda>
   }

@@ -537,7 +537,12 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
                 </div>
               ))}
             </div>
-            {finalizada.troco > 0 ? (
+            {finalizada.saldoDevedor > 0 ? (
+              <div className="caixa-total caixa-saldo">
+                <span>Saldo devedor</span>
+                <strong>{formatarMoeda(finalizada.saldoDevedor)}</strong>
+              </div>
+            ) : finalizada.troco > 0 ? (
               <div className="caixa-total caixa-troco">
                 <span>Seu troco</span>
                 <strong>{formatarMoeda(finalizada.troco)}</strong>

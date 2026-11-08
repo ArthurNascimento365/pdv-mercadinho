@@ -44,8 +44,10 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - Instalador `dist/PDV Mercadinho Setup 0.1.10.exe` gerado em 08/11/2026 (tabelas de preço
   PROMOCIONAL e NORMAL por item).
 - **08/11 — janela da tabela sem preço** (setas + Enter) e **mesmo produto soma na QTD** da linha
-  — no instalador `dist/PDV Mercadinho Setup 0.1.11.exe` (08/11/2026). Schema do banco na
-  versão 8. 311 testes (29 arquivos).
+  — no instalador `dist/PDV Mercadinho Setup 0.1.11.exe` (08/11/2026).
+- **08/11 — saldo devedor** (F9 no pagamento: finaliza com parte em aberto, sem cliente; cupom
+  mostra "SALDO DEVEDOR") e **cartão por extenso no cupom** (sem instalador ainda). Schema do
+  banco na versão 9. 315 testes (29 arquivos).
 
 ### Em andamento
 
@@ -249,6 +251,13 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   manda o erro com prefixo `[gerente] ` e o renderer usa `exigeGerente(e)` para pedir a senha.
   Fiado não entra na contagem do fechamento (`FORMAS_CONTAVEIS`); pagamento de fiado entra no
   caixa aberto na forma recebida. Cancelar venda finalizada gera estorno na caderneta.
+- Saldo devedor: F9 na janela de pagamento (só com ao menos um pagamento lançado e algo
+  faltando) pede confirmação e chama `finalizarVenda(db, true)`; o que falta vai para
+  `vendas.saldo_devedor` (migração 9), sem cliente e sem caderneta — para cobrar depois, o certo
+  é o fiado. O cupom mostra "Total recebido" e "SALDO DEVEDOR" (grande); a tela Vender mostra o
+  saldo em vermelho no lugar do troco. O dinheiro esperado do caixa só conta o que entrou.
+- Cupom do cliente: débito/crédito saem como "Cartão de Débito"/"Cartão de Crédito"
+  (`FORMA_NO_CUPOM` em layouts.ts); telas e relatórios seguem com `FORMAS_PAGAMENTO`.
 - Pix: QR estático gerado no PDV (txid `PDV<venda>`), confirmação manual pelo operador.
 - Promoção/atacarejo: preço de tabela = promocional dentro das datas; atacarejo pela quantidade
   total do produto na venda (reprecifica todas as linhas, inclusive ao cancelar item). Etiqueta

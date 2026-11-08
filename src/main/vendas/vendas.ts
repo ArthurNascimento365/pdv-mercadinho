@@ -35,6 +35,7 @@ interface LinhaVenda {
   desconto: number
   total: number
   troco: number
+  saldo_devedor: number
   caixa_id: number | null
   cliente_id: number | null
   cliente_nome: string | null
@@ -103,6 +104,7 @@ export function obterVenda(db: Banco, id: number): Venda | null {
     pago,
     restante: Math.max(0, v.total - pago),
     troco: v.troco,
+    saldoDevedor: v.saldo_devedor,
     caixaId: v.caixa_id,
     clienteId: v.cliente_id,
     clienteNome: v.cliente_nome,
@@ -515,13 +517,23 @@ function moverEstoque(db: Banco, vendaId: number, sinal: 1 | -1): void {
   }
 }
 
-/** Fecha a venda: confere pagamentos, calcula o troco e baixa o estoque. */
-export function finalizarVenda(db: Banco): Venda {
+/**
+ * Fecha a venda: confere pagamentos, calcula o troco e baixa o estoque. Com `comSaldoDevedor`,
+ * fecha mesmo sem receber tudo (precisa de ao menos um pagamento): o que falta fica em
+ * `saldo_devedor`, sem cliente, e sai no cupom.
+ */
+export function finalizarVenda(db: Banco, comSaldoDevedor = false): Venda {
   return emTransacao(db, () => {
     const vendaId = exigirVendaAberta(db)
     const venda = obterVenda(db, vendaId)!
     if (!venda.itens.some((i) => !i.cancelado)) throw new ErroNegocio('Venda sem itens')
-    if (venda.pago < venda.total) throw new ErroNegocio(`Falta receber ${formatarMoeda(venda.total - venda.pago)}`)
+    if (venda.pago < venda.total && !comSaldoDevedor) {
+      throw new ErroNegocio(`Falta receber ${formatarMoeda(venda.total - venda.pago)}`)
+    }
+    if (comSaldoDevedor && venda.pagamentos.length === 0) {
+      throw new ErroNegocio('Lance primeiro o que o cliente pagou')
+    }
+    const saldoDevedor = Math.max(0, venda.total - venda.pago)
 
     const dinheiro = venda.pagamentos.filter((p) => p.forma === 'dinheiro').reduce((s, p) => s + p.valor, 0)
     const outros = venda.pago - dinheiro
@@ -529,7 +541,7 @@ export function finalizarVenda(db: Banco): Venda {
     if (outros > venda.total) {
       throw new ErroNegocio('Cartão/Pix/fiado passam do total. Remova um pagamento e lance de novo.')
     }
-    const troco = venda.pago - venda.total
+    const troco = Math.max(0, venda.pago - venda.total)
     if (troco > dinheiro) throw new ErroNegocio('Troco maior que o dinheiro recebido')
 
     const caixaId = exigirCaixaAberto(db)
@@ -541,8 +553,8 @@ export function finalizarVenda(db: Banco): Venda {
       lancarFiado(db, { clienteId: venda.clienteId, tipo: 'compra', valor: fiado, vendaId, caixaId, autorizado: autorizado === 1 })
     }
     db.prepare(
-      `UPDATE vendas SET status = 'finalizada', finalizada_em = ${AGORA}, troco = ?, caixa_id = ? WHERE id = ?`
-    ).run(troco, caixaId, vendaId)
+      `UPDATE vendas SET status = 'finalizada', finalizada_em = ${AGORA}, troco = ?, saldo_devedor = ?, caixa_id = ? WHERE id = ?`
+    ).run(troco, saldoDevedor, caixaId, vendaId)
     moverEstoque(db, vendaId, -1)
     return obterVenda(db, vendaId)!
   })

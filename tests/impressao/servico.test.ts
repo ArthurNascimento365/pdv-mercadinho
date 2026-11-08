@@ -118,6 +118,23 @@ describe('serviço de impressão', () => {
       expect(recebido(vender([['pix', 2247]]).id)).toBeUndefined()
     })
 
+    it('cupom com saldo devedor mostra o recebido e o que ficou devendo', () => {
+      adicionarProduto(db, produtoId, 3000) // 22,47
+      adicionarPagamento(db, 'dinheiro', 2000)
+      const v = finalizarVenda(db, true)
+      const l = new ServicoImpressao(db, transportesFalsos()).previa('venda', v.id).linhas.map((x) => x.texto)
+      expect(l.find((x) => x.startsWith('Total recebido'))).toMatch(/20,00$/)
+      expect(l.find((x) => x.startsWith('SALDO DEVEDOR'))).toMatch(/R\$\s2,47$/)
+      expect(l.some((x) => x.startsWith('Troco'))).toBe(false)
+    })
+
+    it('cartão sai por extenso no cupom', () => {
+      const v = vender([['debito', 1000], ['credito', 1247]])
+      const l = new ServicoImpressao(db, transportesFalsos()).previa('venda', v.id).linhas.map((x) => x.texto)
+      expect(l.find((x) => x.startsWith('Cartão de Débito'))).toMatch(/10,00$/)
+      expect(l.find((x) => x.startsWith('Cartão de Crédito'))).toMatch(/12,47$/)
+    })
+
     it('item a prazo sai no cupom só com o preço cobrado, sem citar a tabela', () => {
       definirConfigAPrazo(db, { percentual: 1000, perguntar: true })
       const v = adicionarProduto(db, produtoId, 2000) // 2 × 7,49

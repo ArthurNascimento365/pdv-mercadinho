@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { centavosParaTexto, formatarMoeda, lerMoeda } from '@shared/dinheiro'
 import { FORMAS_PAGAMENTO, type FormaPagamento, type Venda } from '@shared/vendas'
 import { BuscaCliente, SenhaGerente } from '../componentes/Clientes'
+import { Confirmar } from '../componentes/Modais'
 import { QrPix } from '../componentes/QrPix'
 import { exigeGerente, mensagemErro, useTeclas } from '../util'
 
 const TECLAS: Record<string, FormaPagamento> = { F1: 'dinheiro', F2: 'debito', F3: 'credito', F4: 'pix', F5: 'fiado' }
 
-type Modal = { tipo: 'cliente' } | { tipo: 'gerente'; motivo: string; centavos: number } | null
+type Modal = { tipo: 'cliente' } | { tipo: 'gerente'; motivo: string; centavos: number } | { tipo: 'saldo' } | null
 
 interface Props {
   venda: Venda
@@ -31,6 +32,8 @@ export function Pagamento({ venda, onAtualizar, onFinalizada, onFechar }: Props)
   const campo = useRef<HTMLInputElement>(null)
 
   const quitada = venda.restante === 0
+  // Cliente pagou só uma parte: dá para fechar com o resto como saldo devedor (sai no cupom).
+  const podeSaldo = !quitada && venda.pagamentos.length > 0
   const trocoPrevisto = Math.max(0, venda.pago - venda.total)
 
   useEffect(() => {
@@ -127,6 +130,7 @@ export function Pagamento({ venda, onAtualizar, onFinalizada, onFechar }: Props)
           await window.pdv.pix.imprimir(v, venda.id)
         }),
       F8: () => void removerUltimo(),
+      F9: () => podeSaldo && setModal({ tipo: 'saldo' }),
       Escape: onFechar
     },
     modal === null
@@ -231,6 +235,16 @@ export function Pagamento({ venda, onAtualizar, onFinalizada, onFechar }: Props)
               <kbd>F8</kbd> Remover último
             </button>
           )}
+          {podeSaldo && (
+            <button
+              className="secundario"
+              title="Finalizar com o que falta como saldo devedor (sai no cupom)"
+              onClick={() => setModal({ tipo: 'saldo' })}
+              disabled={ocupado}
+            >
+              <kbd>F9</kbd> Saldo devedor
+            </button>
+          )}
           <span className="espaco" />
           <button className="secundario" onClick={onFechar}>
             <kbd>Esc</kbd> Voltar à venda
@@ -264,6 +278,20 @@ export function Pagamento({ venda, onAtualizar, onFinalizada, onFechar }: Props)
             if (forma === 'fiado' && venda.clienteId === null) setForma('dinheiro')
             setModal(null)
           }}
+        />
+      )}
+      {modal?.tipo === 'saldo' && (
+        <Confirmar
+          titulo="Finalizar com saldo devedor"
+          mensagem={
+            <p>
+              O cliente pagou <b>{formatarMoeda(venda.pago)}</b> e fica devendo <b>{formatarMoeda(venda.restante)}</b>. O
+              cupom sai com <b>SALDO DEVEDOR</b>; o sistema não registra quem deve (para isso, use o fiado).
+            </p>
+          }
+          rotuloSim="Finalizar"
+          onSim={async () => onFinalizada(await window.pdv.vendas.finalizar(true))}
+          onFechar={() => setModal(null)}
         />
       )}
       {modal?.tipo === 'gerente' && (
