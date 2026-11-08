@@ -145,7 +145,7 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
         <h3>Tabelas de preço PROMOCIONAL e NORMAL</h3>
         <p className="dica">
           Na venda, cada item pode ir para a tabela PROMOCIONAL (preço de venda do cadastro) ou NORMAL (preço
-          maior). Na tela Vender, o item PROMOCIONAL ganha essa marca; o cupom mostra só o preço cobrado. O
+          maior). A tabela não aparece na lista nem no cupom: só o preço cobrado. O
           produto pode ter um preço NORMAL fixo no cadastro; sem ele, vale o percentual abaixo.
         </p>
         <div className="grade">

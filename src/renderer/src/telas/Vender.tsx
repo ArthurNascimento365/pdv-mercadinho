@@ -448,11 +448,6 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
                     <span className="caixa-desc">{i.descricao}</span>
                     {i.tipoPreco === 'promocao' && <span className="etiqueta oferta">oferta</span>}
                     {i.tipoPreco === 'atacado' && <span className="etiqueta oferta">atacado</span>}
-                    {i.promocional && (
-                      <span className="etiqueta etiqueta-promocional" title="Tabela PROMOCIONAL (só na tela: não sai no cupom)">
-                        PROMOCIONAL
-                      </span>
-                    )}
                   </td>
                   <td className="num">
                     <CelulaEditavel

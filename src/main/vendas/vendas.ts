@@ -66,14 +66,8 @@ export function obterVenda(db: Banco, id: number): Venda | null {
     .get(id) as LinhaVenda | undefined
   if (!v) return null
 
-  const { percentual } = obterConfigAPrazo(db)
   const itens = (
-    db
-      .prepare(
-        `SELECT i.*, p.preco_a_prazo FROM venda_itens i JOIN produtos p ON p.id = i.produto_id
-         WHERE i.venda_id = ? ORDER BY i.sequencia`
-      )
-      .all(id) as unknown as (LinhaItem & { preco_a_prazo: number | null })[]
+    db.prepare('SELECT * FROM venda_itens WHERE venda_id = ? ORDER BY sequencia').all(id) as unknown as LinhaItem[]
   ).map(
     (i): ItemVenda => ({
       id: i.id,
@@ -89,12 +83,7 @@ export function obterVenda(db: Banco, id: number): Venda | null {
       cancelado: i.cancelado === 1,
       tipoPreco: i.tipo_preco,
       precoTabela: i.preco_tabela ?? i.preco_unitario,
-      tabela: i.tabela_preco,
-      promocional:
-        i.cancelado === 0 &&
-        i.tabela_preco === 'varejo' &&
-        i.tipo_preco !== 'etiqueta' &&
-        (i.preco_a_prazo !== null || percentual > 0)
+      tabela: i.tabela_preco
     })
   )
   const pagamentos = db

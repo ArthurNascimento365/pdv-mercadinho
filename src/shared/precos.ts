@@ -34,7 +34,7 @@ export function precoTabela(p: RegrasPreco, hoje: string): { preco: Centavos; ti
 
 /**
  * Tabela de preço do item na venda: varejo = PROMOCIONAL (preço de cadastro) e a_prazo = NORMAL
- * (preço maior). O cupom mostra só o preço cobrado; a tela Vender marca o item PROMOCIONAL.
+ * (preço maior). Nem o cupom nem a lista citam a tabela.
  */
 export type TabelaPreco = 'varejo' | 'a_prazo'
 

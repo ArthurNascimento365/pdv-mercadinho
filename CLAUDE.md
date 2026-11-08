@@ -39,8 +39,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - Instalador `dist/PDV Mercadinho Setup 0.1.9.exe` gerado em 01/11/2026 (visual novo,
   descrição em maiúsculas, código interno, pagamento dividido, Enter para pagar e tela Vender
   pensada para o cliente).
-- **08/11 — tabelas de preço PROMOCIONAL e NORMAL por item** (marca PROMOCIONAL só na tela, nada
-  no cupom): ainda sem instalador. Schema do banco na versão 8. 309 testes (29 arquivos).
+- **08/11 — tabelas de preço PROMOCIONAL e NORMAL por item** (tabela não aparece na lista nem
+  no cupom; janela não mostra o preço NORMAL): ainda sem instalador. Schema do banco na versão 8.
+  308 testes (29 arquivos).
 
 ### Em andamento
 
@@ -248,9 +249,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   `preco_alterado_em` (base das etiquetas de gôndola).
 - Tabela de preço: **PROMOCIONAL** (id interno `varejo` = preço de venda do cadastro) e **NORMAL**
   (id `a_prazo` = preço maior); os ids ficaram do primeiro nome, só os rótulos mudaram
-  (`TABELAS_PRECO`). Escolhida **por item**. O cupom só mostra o preço cobrado, sem citar tabela;
-  a tela Vender mostra a marca "PROMOCIONAL" no item (`ItemVenda.promocional`: tabela varejo,
-  não etiqueta, e o produto tinha preço NORMAL maior) e nada no NORMAL. Preço NORMAL = `produtos.preco_a_prazo` (fixo,
+  (`TABELAS_PRECO`). Escolhida **por item**. Nem o cupom nem a lista da tela Vender citam a tabela:
+  só o preço cobrado. A janela de escolha fica à vista do cliente, então mostra só o preço
+  PROMOCIONAL; a opção NORMAL aparece sem preço. Preço NORMAL = `produtos.preco_a_prazo` (fixo,
   maior que o de venda) ou, sem ele, preço de tabela + percentual de Configurações
   (`tabela.a_prazo.percentual` em centésimos de %, `precoAPrazo` em shared/precos.ts). O item
   guarda `venda_itens.tabela_preco`; `reprecificarProduto` respeita a tabela de cada linha

@@ -303,15 +303,6 @@ describe('vendas', () => {
       expect(opcoesTabelaItem(db, v.itens[0]!.id)).toBeNull()
     })
 
-    it('marca PROMOCIONAL só no item que tinha preço NORMAL maior', () => {
-      expect(venda(bipar(EAN_LEITE)).itens[0]!.promocional).toBe(false) // sem tabela NORMAL
-      aPrazo(1000)
-      const v = venda(bipar(EAN_LEITE))
-      expect(v.itens.map((i) => i.promocional)).toEqual([true, true])
-      const depois = alterarTabelaItem(db, v.itens[1]!.id, 'a_prazo')
-      expect(depois.itens.map((i) => i.promocional)).toEqual([true, false])
-    })
-
     it('mantém o desconto do item e o atacarejo vem antes do acréscimo', () => {
       aPrazo(1000)
       const refri = criarProduto(db, entrada({ descricao: 'Refri', precoVenda: 900, atacadoQuantidade: 3000, atacadoPreco: 800 }))

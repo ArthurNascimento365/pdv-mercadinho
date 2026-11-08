@@ -251,7 +251,8 @@ export function EscolhaTabela({
     return () => window.removeEventListener('keydown', ouvir)
   }, [])
 
-  const opcao = (tabela: TabelaPreco, tecla: string, preco: Centavos): React.JSX.Element => (
+  // O preço NORMAL não aparece: a janela fica à vista do cliente.
+  const opcao = (tabela: TabelaPreco, tecla: string, preco: Centavos | null): React.JSX.Element => (
     <button
       className={`tabela-opcao ${tabela === atual ? 'tabela-atual' : ''}`}
       onMouseDown={(e) => e.preventDefault()}
@@ -259,7 +260,7 @@ export function EscolhaTabela({
     >
       <kbd>{tecla}</kbd>
       <span>{TABELAS_PRECO[tabela]}</span>
-      <strong>{formatarMoeda(preco)}</strong>
+      {preco !== null && <strong>{formatarMoeda(preco)}</strong>}
     </button>
   )
 
@@ -272,9 +273,9 @@ export function EscolhaTabela({
         </p>
         <div className="tabela-opcoes">
           {opcao('varejo', 'Enter', opcoes.varejo)}
-          {opcao('a_prazo', 'F4', opcoes.aPrazo)}
+          {opcao('a_prazo', 'F4', null)}
         </div>
-        <p className="dica">Preço por unidade. Esc deixa como está; bipar o próximo produto também confirma.</p>
+        <p className="dica">Preço PROMOCIONAL por unidade. Esc deixa como está; bipar o próximo produto também confirma.</p>
       </div>
     </div>
   )
