@@ -4,7 +4,7 @@ PDV desktop para mercadinho: venda 100% offline, cupom não fiscal.
 Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP e Diferenciais"
 (https://claude.ai/artifact/M4nBv2G4Nz6dUZS8yi7Uip).
 
-## Estado do projeto (atualizado em 25/10/2026)
+## Estado do projeto (atualizado em 08/11/2026)
 
 ### Concluído — MVP completo (fases 0 a 5 do roadmap)
 
@@ -40,8 +40,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   descrição em maiúsculas, código interno, pagamento dividido, Enter para pagar e tela Vender
   pensada para o cliente).
 - **08/11 — tabelas de preço PROMOCIONAL e NORMAL por item** (tabela não aparece na lista nem
-  no cupom; janela não mostra o preço NORMAL): ainda sem instalador. Schema do banco na versão 8.
-  308 testes (29 arquivos).
+  no cupom; janela não mostra o preço NORMAL).
+- Instalador `dist/PDV Mercadinho Setup 0.1.10.exe` gerado em 08/11/2026 (tabelas de preço
+  PROMOCIONAL e NORMAL por item). Schema do banco na versão 8. 308 testes (29 arquivos).
 
 ### Em andamento
 
@@ -94,7 +95,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.10.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.11.
 4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
