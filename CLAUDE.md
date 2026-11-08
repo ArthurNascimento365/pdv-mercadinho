@@ -46,8 +46,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - **08/11 — janela da tabela sem preço** (setas + Enter) e **mesmo produto soma na QTD** da linha
   — no instalador `dist/PDV Mercadinho Setup 0.1.11.exe` (08/11/2026).
 - **08/11 — saldo devedor** (F9 no pagamento: finaliza com parte em aberto, sem cliente; cupom
-  mostra "SALDO DEVEDOR") e **cartão por extenso no cupom** (sem instalador ainda). Schema do
-  banco na versão 9. 315 testes (29 arquivos).
+  mostra "SALDO DEVEDOR") e **cartão por extenso no cupom** — no instalador
+  `dist/PDV Mercadinho Setup 0.1.12.exe` (08/11/2026). Schema do banco na versão 9. 315 testes
+  (29 arquivos).
 
 ### Em andamento
 
@@ -100,7 +101,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.12.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.13.
 4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
