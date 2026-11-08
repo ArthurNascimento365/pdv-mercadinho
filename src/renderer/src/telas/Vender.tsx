@@ -160,7 +160,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   const bruto = ativos.reduce((s, i) => s + i.totalBruto, 0)
   const economia = Math.max(0, bruto - (venda?.total ?? 0))
 
-  // Perguntar a tabela a cada item (Configurações → Tabela A prazo). Ref: lido dentro de callbacks.
+  // Perguntar a tabela a cada item (Configurações → tabela de preço). Ref: lido dentro de callbacks.
   const perguntarTabela = useRef(true)
   useEffect(() => {
     window.pdv.precos
@@ -224,14 +224,14 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   }
 
   /**
-   * Janela da tabela de preço do item (Varejo ou A prazo). Só abre quando o produto tem
-   * preço a prazo diferente; `avisar` = o operador pediu (F4) e deve saber se não houver.
+   * Janela da tabela de preço do item (PROMOCIONAL ou NORMAL). Só abre quando o produto tem
+   * preço NORMAL diferente; `avisar` = o operador pediu (F4) e deve saber se não houver.
    */
   async function abrirTabela(alvo: ItemVenda, avisar: boolean): Promise<void> {
     try {
       const opcoes = await window.pdv.vendas.opcoesTabela(alvo.id)
       if (opcoes) setModal({ tipo: 'tabela', item: alvo, opcoes })
-      else if (avisar) falhar('Este item não tem preço a prazo diferente do varejo')
+      else if (avisar) falhar('Este item não tem preço NORMAL diferente do PROMOCIONAL')
     } catch (e) {
       falhar(mensagemErro(e))
     }
@@ -448,9 +448,9 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
                     <span className="caixa-desc">{i.descricao}</span>
                     {i.tipoPreco === 'promocao' && <span className="etiqueta oferta">oferta</span>}
                     {i.tipoPreco === 'atacado' && <span className="etiqueta oferta">atacado</span>}
-                    {i.tabela === 'a_prazo' && (
-                      <span className="etiqueta etiqueta-prazo" title="Tabela A prazo (interno: não sai no cupom)">
-                        AP
+                    {i.promocional && (
+                      <span className="etiqueta etiqueta-promocional" title="Tabela PROMOCIONAL (só na tela: não sai no cupom)">
+                        PROMOCIONAL
                       </span>
                     )}
                   </td>

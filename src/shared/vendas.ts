@@ -38,6 +38,8 @@ export interface ItemVenda {
   precoTabela: Centavos
   /** Tabela de preço do item (interna: o cupom não mostra). */
   tabela: TabelaPreco
+  /** Item na tabela PROMOCIONAL que tinha um preço NORMAL maior: a tela mostra a marca. */
+  promocional: boolean
 }
 
 /** Preço unitário do item em cada tabela, para o operador escolher. */

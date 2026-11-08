@@ -32,10 +32,13 @@ export function precoTabela(p: RegrasPreco, hoje: string): { preco: Centavos; ti
   return promocaoAtiva(p, hoje) ? { preco: p.precoPromocional!, tipo: 'promocao' } : { preco: p.precoVenda, tipo: 'normal' }
 }
 
-/** Tabela de preço do item na venda. É interna: o cupom mostra só o preço cobrado. */
+/**
+ * Tabela de preço do item na venda: varejo = PROMOCIONAL (preço de cadastro) e a_prazo = NORMAL
+ * (preço maior). O cupom mostra só o preço cobrado; a tela Vender marca o item PROMOCIONAL.
+ */
 export type TabelaPreco = 'varejo' | 'a_prazo'
 
-export const TABELAS_PRECO: Record<TabelaPreco, string> = { varejo: 'Varejo', a_prazo: 'A prazo' }
+export const TABELAS_PRECO: Record<TabelaPreco, string> = { varejo: 'PROMOCIONAL', a_prazo: 'NORMAL' }
 
 export function tabelaValida(t: unknown): t is TabelaPreco {
   return t === 'varejo' || t === 'a_prazo'

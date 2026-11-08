@@ -208,8 +208,8 @@ export function DescontoVenda({
 }
 
 /**
- * Tabela de preço do item recém-lançado (ou do item escolhido, F4): Enter = Varejo,
- * F4 = A prazo, Esc = deixa como está. Se chegar um dígito (o leitor bipou o próximo
+ * Tabela de preço do item recém-lançado (ou do item escolhido, F4): Enter = PROMOCIONAL,
+ * F4 = NORMAL, Esc = deixa como está. Se chegar um dígito (o leitor bipou o próximo
  * produto sem o operador responder), a janela fecha e o dígito segue para o campo de código.
  */
 export function EscolhaTabela({

@@ -142,14 +142,15 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
       </section>
 
       <section className="secao">
-        <h3>Tabela de preço A prazo</h3>
+        <h3>Tabelas de preço PROMOCIONAL e NORMAL</h3>
         <p className="dica">
-          Na venda, cada item pode ir para a tabela Varejo ou A prazo. É interno: o cupom mostra só o preço
-          cobrado. O produto pode ter um preço a prazo fixo no cadastro; sem ele, vale o percentual abaixo.
+          Na venda, cada item pode ir para a tabela PROMOCIONAL (preço de venda do cadastro) ou NORMAL (preço
+          maior). Na tela Vender, o item PROMOCIONAL ganha essa marca; o cupom mostra só o preço cobrado. O
+          produto pode ter um preço NORMAL fixo no cadastro; sem ele, vale o percentual abaixo.
         </p>
         <div className="grade">
           <label>
-            Acréscimo a prazo (%)
+            Acréscimo da tabela NORMAL (%)
             <input
               value={percentualPrazo}
               inputMode="decimal"
@@ -164,8 +165,8 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
         </div>
         <p className="dica">
           {perguntarTabela
-            ? 'A cada item com preço a prazo diferente, abre a janela: Enter = Varejo, F4 = A prazo. Bipar o próximo produto também confirma Varejo.'
-            : 'Os itens entram no Varejo; para levar um item para A prazo, selecione-o na lista e tecle F4.'}
+            ? 'A cada item com preço NORMAL diferente, abre a janela: Enter = PROMOCIONAL, F4 = NORMAL. Bipar o próximo produto também confirma PROMOCIONAL.'
+            : 'Os itens entram na PROMOCIONAL; para levar um item para a NORMAL, selecione-o na lista e tecle F4.'}
         </p>
       </section>
 

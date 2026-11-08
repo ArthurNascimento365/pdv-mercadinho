@@ -1248,10 +1248,10 @@ button.acao-perigo kbd {
   background: var(--sucesso-fundo);
 }
 
-/* Marca do item na tabela A prazo: discreta, para o operador */
-.etiqueta-prazo {
-  background: var(--info-fundo);
-  color: var(--info);
+/* Marca do item na tabela PROMOCIONAL: visível para o cliente na tela (não sai no cupom) */
+.etiqueta-promocional {
+  background: var(--sucesso-fundo);
+  color: var(--sucesso);
 }
 
 .tipo-desconto {

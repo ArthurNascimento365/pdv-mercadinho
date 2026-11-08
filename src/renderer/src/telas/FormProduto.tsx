@@ -386,11 +386,11 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
           </label>
 
           <label className="largo">
-            Preço a prazo (R$)
+            Preço NORMAL (R$)
             <input
               value={campos.precoAPrazo}
               inputMode="decimal"
-              placeholder="opcional: sem ele, vale o percentual da tabela A prazo (Configurações)"
+              placeholder="opcional: sem ele, vale o preço de venda + o percentual da tabela NORMAL (Configurações)"
               onChange={(e) => definir('precoAPrazo', e.target.value)}
             />
           </label>
