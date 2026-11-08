@@ -141,6 +141,7 @@ const api: PdvApi = {
   },
   relatorios: {
     vendas: (periodo) => invocar('relatorios:vendas', periodo),
+    consultarVendas: (filtro) => invocar('relatorios:consultarVendas', filtro),
     fechamentos: (periodo) => invocar('relatorios:fechamentos', periodo),
     margem: (periodo) => invocar('relatorios:margem', periodo),
     abc: (periodo) => invocar('relatorios:abc', periodo),

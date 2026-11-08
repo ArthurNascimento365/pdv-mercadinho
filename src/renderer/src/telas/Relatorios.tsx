@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import { formatarMoeda, quantidadeParaTexto } from '@shared/dinheiro'
-import { periodoPadrao, type Periodo } from '@shared/relatorios'
+import type { Diagramado } from '@shared/impressao'
+import { periodoPadrao, type Periodo, type VendaConsulta } from '@shared/relatorios'
 import { FORMAS_PAGAMENTO } from '@shared/vendas'
+import { Confirmar } from '../componentes/Modais'
+import { PreviaCupom } from '../componentes/PreviaCupom'
 import { mensagemErro, useTeclas } from '../util'
 
-type Aba = 'vendas' | 'fechamentos' | 'margem' | 'abc' | 'fiado' | 'semGiro'
+type Aba = 'vendas' | 'fechamentos' | 'margem' | 'abc' | 'fiado' | 'semGiro' | 'consulta'
 
 const ABAS: { aba: Aba; tecla: string; nome: string; usaPeriodo: boolean }[] = [
   { aba: 'vendas', tecla: 'F1', nome: 'Vendas', usaPeriodo: true },
@@ -12,8 +15,11 @@ const ABAS: { aba: Aba; tecla: string; nome: string; usaPeriodo: boolean }[] = [
   { aba: 'margem', tecla: 'F3', nome: 'Margem', usaPeriodo: true },
   { aba: 'abc', tecla: 'F4', nome: 'Curva ABC', usaPeriodo: true },
   { aba: 'fiado', tecla: 'F5', nome: 'Fiado em aberto', usaPeriodo: false },
-  { aba: 'semGiro', tecla: 'F6', nome: 'Sem giro (30 dias)', usaPeriodo: false }
+  { aba: 'semGiro', tecla: 'F6', nome: 'Sem giro (30 dias)', usaPeriodo: false },
+  { aba: 'consulta', tecla: 'F7', nome: 'Consultar vendas', usaPeriodo: true }
 ]
+
+type ModalConsulta = { tipo: 'previa'; id: number; documento: Diagramado } | { tipo: 'cancelar'; venda: VendaConsulta } | null
 
 /** Tabela pronta para a tela e para o CSV (mesmos textos). */
 interface Tabela {
@@ -23,6 +29,8 @@ interface Tabela {
   numericas: number[]
   linhas: { celulas: string[]; alerta?: boolean }[]
   nota?: string
+  /** Consultar vendas: as vendas das linhas, na mesma ordem (para abrir, reimprimir e cancelar). */
+  vendas?: VendaConsulta[]
 }
 
 const real = formatarMoeda
@@ -32,7 +40,7 @@ const dataHora = (iso: string | null): string =>
   iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—'
 const diaBr = (dia: string): string => dia.split('-').reverse().join('/')
 
-async function montar(aba: Aba, periodo: Periodo): Promise<Tabela> {
+async function montar(aba: Aba, periodo: Periodo, numero: number | null): Promise<Tabela> {
   const r = window.pdv.relatorios
   switch (aba) {
     case 'vendas': {
@@ -44,7 +52,8 @@ async function montar(aba: Aba, periodo: Periodo): Promise<Tabela> {
           { rotulo: 'Ticket médio', valor: real(v.ticketMedio) },
           { rotulo: 'Descontos', valor: real(v.descontos) },
           { rotulo: 'Canceladas', valor: String(v.canceladas), alerta: v.canceladas > 0 },
-          ...v.porForma.map((f) => ({ rotulo: FORMAS_PAGAMENTO[f.forma], valor: real(f.valor) }))
+          ...v.porForma.map((f) => ({ rotulo: FORMAS_PAGAMENTO[f.forma], valor: real(f.valor) })),
+          ...(v.saldoDevedor > 0 ? [{ rotulo: 'Saldo devedor (em aberto)', valor: real(v.saldoDevedor), alerta: true }] : [])
         ],
         cabecalho: ['Dia', 'Vendas', 'Total'],
         numericas: [1, 2],
@@ -139,6 +148,39 @@ async function montar(aba: Aba, periodo: Periodo): Promise<Tabela> {
         nota: 'Bons candidatos a promoção ou queima de estoque.'
       }
     }
+    case 'consulta': {
+      const vendas = await r.consultarVendas({ periodo, numero })
+      const fechadas = vendas.filter((v) => v.status === 'finalizada')
+      const saldo = fechadas.reduce((t, v) => t + v.saldoDevedor, 0)
+      return {
+        resumo: [
+          { rotulo: 'Vendas finalizadas', valor: String(fechadas.length) },
+          { rotulo: 'Total', valor: real(fechadas.reduce((t, v) => t + v.total, 0)) },
+          { rotulo: 'Canceladas', valor: String(vendas.length - fechadas.length), alerta: vendas.length > fechadas.length },
+          { rotulo: 'Saldo devedor', valor: real(saldo), alerta: saldo > 0 }
+        ],
+        cabecalho: ['Nº', 'Data', 'Operador', 'Itens', 'Pagamento', 'Total', 'Saldo devedor', 'Situação'],
+        numericas: [0, 3, 5, 6],
+        linhas: vendas.map((v) => ({
+          celulas: [
+            String(v.id),
+            dataHora(v.data),
+            v.operador ?? '',
+            String(v.itens),
+            [...new Set(v.formas)].map((f) => FORMAS_PAGAMENTO[f]).join(' + '),
+            real(v.total),
+            v.saldoDevedor > 0 ? real(v.saldoDevedor) : '',
+            v.status === 'cancelada' ? 'Cancelada' : 'Finalizada'
+          ],
+          alerta: v.status === 'cancelada'
+        })),
+        nota:
+          vendas.length === 500
+            ? 'Mostrando as 500 mais recentes: diminua o período ou busque pelo número.'
+            : '↑ ↓ escolhe · Enter abre o cupom · F12 reimprime · F8 cancela (só venda do caixa aberto agora).',
+        vendas
+      }
+    }
   }
 }
 
@@ -148,17 +190,56 @@ export function Relatorios({ onVoltar }: { onVoltar: () => void }): React.JSX.El
   const [tabela, setTabela] = useState<Tabela | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  // Consultar vendas: número digitado (busca em qualquer data), linha escolhida e janelas.
+  const [numero, setNumero] = useState('')
+  const [selecionada, setSelecionada] = useState(0)
+  const [modal, setModal] = useState<ModalConsulta>(null)
+  const [recarga, setRecarga] = useState(0)
+  const numeroBusca = aba === 'consulta' && numero ? Number(numero) : null
 
   useEffect(() => {
     let cancelado = false
     setErro(null)
-    montar(aba, periodo)
-      .then((t) => !cancelado && setTabela(t))
+    montar(aba, periodo, numeroBusca)
+      .then((t) => {
+        if (cancelado) return
+        setTabela(t)
+        setSelecionada((s) => Math.min(s, Math.max(0, t.linhas.length - 1)))
+      })
       .catch((e: unknown) => !cancelado && setErro(mensagemErro(e)))
     return () => {
       cancelado = true
     }
-  }, [aba, periodo])
+  }, [aba, periodo, numeroBusca, recarga])
+
+  const vendaSelecionada = tabela?.vendas?.[selecionada] ?? null
+
+  async function abrirCupom(): Promise<void> {
+    if (!vendaSelecionada) return
+    try {
+      const documento = await window.pdv.hardware.previa('venda', vendaSelecionada.id)
+      setModal({ tipo: 'previa', id: vendaSelecionada.id, documento })
+    } catch (e) {
+      setErro(mensagemErro(e))
+    }
+  }
+
+  async function reimprimir(id: number): Promise<void> {
+    try {
+      await window.pdv.hardware.imprimirVenda(id)
+      setAviso(`Cupom da venda nº ${id} enviado para a impressora.`)
+    } catch (e) {
+      setErro(mensagemErro(e))
+    }
+  }
+
+  function pedirCancelamento(): void {
+    if (!vendaSelecionada) return
+    if (vendaSelecionada.status === 'cancelada') setErro(`A venda nº ${vendaSelecionada.id} já está cancelada`)
+    else if (!vendaSelecionada.podeCancelar) {
+      setErro(`A venda nº ${vendaSelecionada.id} é de um caixa já fechado e não pode ser cancelada`)
+    } else setModal({ tipo: 'cancelar', venda: vendaSelecionada })
+  }
 
   async function exportar(): Promise<void> {
     if (!tabela) return
@@ -171,11 +252,23 @@ export function Relatorios({ onVoltar }: { onVoltar: () => void }): React.JSX.El
     }
   }
 
-  useTeclas({
-    Escape: onVoltar,
-    F10: () => void exportar(),
-    ...Object.fromEntries(ABAS.map((a) => [a.tecla, () => setAba(a.aba)]))
-  })
+  useTeclas(
+    {
+      Escape: onVoltar,
+      F10: () => void exportar(),
+      ...Object.fromEntries(ABAS.map((a) => [a.tecla, () => setAba(a.aba)])),
+      ...(aba === 'consulta'
+        ? {
+            ArrowUp: () => setSelecionada((s) => Math.max(0, s - 1)),
+            ArrowDown: () => setSelecionada((s) => Math.min((tabela?.linhas.length ?? 1) - 1, s + 1)),
+            Enter: () => void abrirCupom(),
+            F8: pedirCancelamento,
+            F12: () => vendaSelecionada && void reimprimir(vendaSelecionada.id)
+          }
+        : {})
+    },
+    modal === null
+  )
 
   const atual = ABAS.find((a) => a.aba === aba)!
 
@@ -210,6 +303,21 @@ export function Relatorios({ onVoltar }: { onVoltar: () => void }): React.JSX.El
           <label className="opcao">
             até <input type="date" value={periodo.ate} onChange={(e) => e.target.value && setPeriodo({ ...periodo, ate: e.target.value })} />
           </label>
+          {aba === 'consulta' && (
+            <label className="opcao">
+              Nº da venda
+              <input
+                className="campo-numero-venda"
+                inputMode="numeric"
+                placeholder="qualquer data"
+                value={numero}
+                onChange={(e) => {
+                  setNumero(e.target.value.replace(/\D/g, '').slice(0, 9))
+                  setSelecionada(0)
+                }}
+              />
+            </label>
+          )}
         </div>
       )}
 
@@ -239,7 +347,12 @@ export function Relatorios({ onVoltar }: { onVoltar: () => void }): React.JSX.El
               </thead>
               <tbody>
                 {tabela.linhas.map((l, i) => (
-                  <tr key={i}>
+                  <tr
+                    key={i}
+                    className={tabela.vendas ? [i === selecionada && 'selecionada', l.alerta && 'cancelado'].filter(Boolean).join(' ') : undefined}
+                    onClick={tabela.vendas ? () => setSelecionada(i) : undefined}
+                    onDoubleClick={tabela.vendas ? () => void abrirCupom() : undefined}
+                  >
                     {l.celulas.map((c, j) => (
                       <td key={j} className={[tabela.numericas.includes(j) && 'num', l.alerta && 'baixo'].filter(Boolean).join(' ')}>
                         {c}
@@ -253,6 +366,40 @@ export function Relatorios({ onVoltar }: { onVoltar: () => void }): React.JSX.El
           </div>
           {tabela.nota && <p className="dica">{tabela.nota}</p>}
         </>
+      )}
+
+      {modal?.tipo === 'previa' && (
+        <PreviaCupom
+          titulo={`Cupom da venda nº ${modal.id}`}
+          documento={modal.documento}
+          onImprimir={() => {
+            setModal(null)
+            void reimprimir(modal.id)
+          }}
+          onFechar={() => setModal(null)}
+        />
+      )}
+      {modal?.tipo === 'cancelar' && (
+        <Confirmar
+          titulo={`Cancelar a venda nº ${modal.venda.id}?`}
+          mensagem={
+            <>
+              <p>
+                {modal.venda.itens} itens · {real(modal.venda.total)} ·{' '}
+                {modal.venda.formas.map((f) => FORMAS_PAGAMENTO[f]).join(' + ')}
+              </p>
+              <p className="dica">Os itens voltam ao estoque. Devolva o dinheiro ou estorne o cartão/Pix.</p>
+            </>
+          }
+          rotuloSim="Cancelar venda"
+          onSim={async () => {
+            await window.pdv.vendas.cancelarFinalizada(modal.venda.id)
+            setModal(null)
+            setAviso(`Venda nº ${modal.venda.id} cancelada.`)
+            setRecarga((n) => n + 1)
+          }}
+          onFechar={() => setModal(null)}
+        />
       )}
     </main>
   )

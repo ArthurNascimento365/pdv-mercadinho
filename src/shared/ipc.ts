@@ -46,7 +46,9 @@ import type {
   Periodo,
   RelatorioFiado,
   RelatorioMargem,
-  RelatorioVendas
+  RelatorioVendas,
+  FiltroConsultaVendas,
+  VendaConsulta
 } from './relatorios'
 
 export type TipoPrevia = 'teste' | 'venda' | 'fechamento'
@@ -175,6 +177,7 @@ export interface CanaisIpc {
   'etiquetas:pdf': { args: [produtoIds: number[]]; retorno: boolean }
 
   'relatorios:vendas': { args: [periodo: Periodo]; retorno: RelatorioVendas }
+  'relatorios:consultarVendas': { args: [filtro: FiltroConsultaVendas]; retorno: VendaConsulta[] }
   'relatorios:fechamentos': { args: [periodo: Periodo]; retorno: LinhaFechamentoRelatorio[] }
   'relatorios:margem': { args: [periodo: Periodo]; retorno: RelatorioMargem }
   'relatorios:abc': { args: [periodo: Periodo]; retorno: LinhaAbc[] }
@@ -334,6 +337,8 @@ export interface PdvApi {
   }
   relatorios: {
     vendas(periodo: Periodo): Promise<RelatorioVendas>
+    /** Vendas uma a uma (até 500), da mais recente para a mais antiga. */
+    consultarVendas(filtro: FiltroConsultaVendas): Promise<VendaConsulta[]>
     fechamentos(periodo: Periodo): Promise<LinhaFechamentoRelatorio[]>
     margem(periodo: Periodo): Promise<RelatorioMargem>
     abc(periodo: Periodo): Promise<LinhaAbc[]>

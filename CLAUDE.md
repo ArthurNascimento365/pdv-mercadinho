@@ -47,8 +47,10 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   — no instalador `dist/PDV Mercadinho Setup 0.1.11.exe` (08/11/2026).
 - **08/11 — saldo devedor** (F9 no pagamento: finaliza com parte em aberto, sem cliente; cupom
   mostra "SALDO DEVEDOR") e **cartão por extenso no cupom** — no instalador
-  `dist/PDV Mercadinho Setup 0.1.12.exe` (08/11/2026). Schema do banco na versão 9. 315 testes
-  (29 arquivos).
+  `dist/PDV Mercadinho Setup 0.1.12.exe` (08/11/2026).
+- **08/11 — Relatórios → F7 Consultar vendas** (venda a venda, busca pelo número, cupom,
+  reimpressão e cancelamento) e saldo devedor no relatório de vendas (sem instalador ainda).
+  Schema do banco na versão 9. 317 testes (29 arquivos).
 
 ### Em andamento
 
@@ -257,6 +259,11 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   `vendas.saldo_devedor` (migração 9), sem cliente e sem caderneta — para cobrar depois, o certo
   é o fiado. O cupom mostra "Total recebido" e "SALDO DEVEDOR" (grande); a tela Vender mostra o
   saldo em vermelho no lugar do troco. O dinheiro esperado do caixa só conta o que entrou.
+- Consultar vendas (Relatórios, F7; `consultarVendas` em relatorios.ts): finalizadas e canceladas
+  do período (inclusive as canceladas ainda abertas), mais recentes primeiro, até 500; com
+  "Nº da venda" preenchido busca só aquela, de qualquer data. ↑↓ escolhe, Enter abre o cupom
+  (prévia, F12 imprime), F12 reimprime, F8 cancela pelas regras de `cancelarVendaFinalizada`
+  (só venda do caixa aberto). O relatório F1 Vendas mostra o total de saldo devedor quando > 0.
 - Cupom do cliente: débito/crédito saem como "Cartão de Débito"/"Cartão de Crédito"
   (`FORMA_NO_CUPOM` em layouts.ts); telas e relatórios seguem com `FORMAS_PAGAMENTO`.
 - Pix: QR estático gerado no PDV (txid `PDV<venda>`), confirmação manual pelo operador.

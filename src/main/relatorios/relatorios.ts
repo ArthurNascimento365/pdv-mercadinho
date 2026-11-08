@@ -6,11 +6,12 @@ import type {
   Periodo,
   RelatorioFiado,
   RelatorioMargem,
-  RelatorioVendas
+  RelatorioVendas,
+  VendaConsulta
 } from '@shared/relatorios'
 import type { Unidade } from '@shared/produtos'
 import type { FormaPagamento } from '@shared/vendas'
-import { obterCaixa } from '../caixa/caixa'
+import { idCaixaAberto, obterCaixa } from '../caixa/caixa'
 import type { Banco } from '../db/conexao'
 import { ErroNegocio } from '../erros'
 import { buscarClientes, diasAtrasoPermitidos } from '../fiado/fiado'
@@ -82,8 +83,68 @@ export function relatorioVendas(db: Banco, periodo: unknown): RelatorioVendas {
     descontos: t.descontos_venda + descontosItens,
     ticketMedio: t.quantidade ? Math.round(t.faturamento / t.quantidade) : 0,
     porDia,
-    porForma
+    porForma,
+    saldoDevedor: (
+      db
+        .prepare(
+          `SELECT COALESCE(SUM(saldo_devedor), 0) AS s FROM vendas WHERE status = 'finalizada' AND finalizada_em BETWEEN ? AND ?`
+        )
+        .get(ini, fim) as { s: number }
+    ).s
   }
+}
+
+const LIMITE_CONSULTA = 500
+
+/**
+ * Vendas uma a uma, da mais recente para a mais antiga: finalizadas pela data em que fecharam e
+ * canceladas pela data do cancelamento. Com `numero`, só aquela venda (de qualquer data).
+ * Venda ainda aberta não aparece.
+ */
+export function consultarVendas(db: Banco, filtro: unknown): VendaConsulta[] {
+  const f = (filtro ?? {}) as { periodo?: unknown; numero?: unknown }
+  const numero = f.numero ?? null
+  if (numero !== null && (typeof numero !== 'number' || !Number.isSafeInteger(numero) || numero <= 0)) {
+    throw new ErroNegocio('Número de venda inválido')
+  }
+  const [ini, fim] = numero === null ? intervalo(f.periodo) : ['', '']
+  const linhas = db
+    .prepare(
+      `SELECT v.id, v.status, COALESCE(v.finalizada_em, v.cancelada_em) AS data, v.cancelada_em,
+              v.finalizada_em, v.caixa_id, v.total, v.saldo_devedor, c.operador,
+              (SELECT count(*) FROM venda_itens i WHERE i.venda_id = v.id AND i.cancelado = 0) AS itens,
+              (SELECT group_concat(p.forma) FROM (SELECT forma FROM venda_pagamentos WHERE venda_id = v.id ORDER BY id) p) AS formas
+       FROM vendas v LEFT JOIN caixas c ON c.id = v.caixa_id
+       WHERE v.status IN ('finalizada', 'cancelada')
+         AND (? IS NOT NULL AND v.id = ? OR ? IS NULL AND COALESCE(v.finalizada_em, v.cancelada_em) BETWEEN ? AND ?)
+       ORDER BY data DESC, v.id DESC LIMIT ${LIMITE_CONSULTA}`
+    )
+    .all(numero, numero, numero, ini, fim) as unknown as {
+    id: number
+    status: 'finalizada' | 'cancelada'
+    data: string
+    cancelada_em: string | null
+    finalizada_em: string | null
+    caixa_id: number | null
+    total: number
+    saldo_devedor: number
+    operador: string | null
+    itens: number
+    formas: string | null
+  }[]
+  const aberto = idCaixaAberto(db)
+  return linhas.map((l) => ({
+    id: l.id,
+    status: l.status,
+    data: l.status === 'cancelada' && l.finalizada_em ? l.finalizada_em : l.data,
+    canceladaEm: l.cancelada_em,
+    operador: l.operador,
+    itens: l.itens,
+    total: l.total,
+    formas: l.formas ? (l.formas.split(',') as FormaPagamento[]) : [],
+    saldoDevedor: l.saldo_devedor,
+    podeCancelar: l.status === 'finalizada' && l.caixa_id !== null && l.caixa_id === aberto
+  }))
 }
 
 export function relatorioFechamentos(db: Banco, periodo: unknown): LinhaFechamentoRelatorio[] {

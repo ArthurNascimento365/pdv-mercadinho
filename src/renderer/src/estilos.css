@@ -1937,3 +1937,8 @@ textarea {
 .erro {
   color: var(--erro);
 }
+
+/* Relatórios → Consultar vendas: busca pelo número da venda */
+.campo-numero-venda {
+  width: 9em;
+}

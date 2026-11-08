@@ -17,6 +17,30 @@ export interface RelatorioVendas {
   porDia: { dia: string; quantidade: number; total: Centavos }[]
   /** Dinheiro já sem o troco. */
   porForma: { forma: FormaPagamento; valor: Centavos }[]
+  /** O que ficou em aberto nas vendas fechadas com saldo devedor (F9 no pagamento). */
+  saldoDevedor: Centavos
+}
+
+/** Uma venda na consulta (Relatórios → Consultar vendas). */
+export interface VendaConsulta {
+  id: number
+  status: 'finalizada' | 'cancelada'
+  /** Quando fechou (ou foi cancelada, se nem chegou a fechar). */
+  data: string
+  canceladaEm: string | null
+  operador: string | null
+  itens: number
+  total: Centavos
+  formas: FormaPagamento[]
+  saldoDevedor: Centavos
+  /** Só venda finalizada do caixa aberto agora se cancela. */
+  podeCancelar: boolean
+}
+
+/** Período ou, com `numero`, só aquela venda (de qualquer data). */
+export interface FiltroConsultaVendas {
+  periodo: Periodo
+  numero: number | null
 }
 
 export interface LinhaFechamentoRelatorio {

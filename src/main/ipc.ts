@@ -56,7 +56,8 @@ import {
   relatorioFechamentos,
   relatorioFiado,
   relatorioMargem,
-  relatorioVendas
+  relatorioVendas,
+  consultarVendas
 } from './relatorios/relatorios'
 import { definirSenhaGerente, temSenhaGerente } from './seguranca'
 import { lerPeso } from './impressao/balanca'
@@ -267,6 +268,7 @@ export function registrarIpc({ db, caminhoBanco, impressao, backup }: ContextoIp
 
   // Relatórios
   tratar('relatorios:vendas', (p) => relatorioVendas(db, p))
+  tratar('relatorios:consultarVendas', (f) => consultarVendas(db, f))
   tratar('relatorios:fechamentos', (p) => relatorioFechamentos(db, p))
   tratar('relatorios:margem', (p) => relatorioMargem(db, p))
   tratar('relatorios:abc', (p) => curvaAbc(db, p))

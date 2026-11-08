@@ -4,6 +4,7 @@ import { abrirCaixa, fecharCaixa } from '../../src/main/caixa/caixa'
 import { abrirBanco, type Banco } from '../../src/main/db/conexao'
 import { criarCliente } from '../../src/main/fiado/fiado'
 import {
+  consultarVendas,
   curvaAbc,
   intervalo,
   produtosSemGiro,
@@ -67,6 +68,38 @@ describe('relatórios', () => {
       { forma: 'debito', valor: 400 }
     ])
     expect(r.porDia).toEqual([{ dia: hoje.de, quantidade: 2, total: 3900 }])
+    expect(r.saldoDevedor).toBe(0)
+  })
+
+  it('vendas: soma o saldo devedor das vendas fechadas com parte em aberto', () => {
+    adicionarProduto(db, arroz, 1000)
+    adicionarPagamento(db, 'dinheiro', 1500)
+    finalizarVenda(db, true)
+    expect(relatorioVendas(db, hoje)).toMatchObject({ faturamento: 2000, saldoDevedor: 500 })
+  })
+
+  it('consultar vendas: uma a uma, mais recente primeiro, com canceladas e busca pelo número', () => {
+    const a = vender([[arroz, 1]], [['dinheiro', 5000]])
+    const b = vender([[cafe, 2]], [['pix', 1000], ['debito', 1000]])
+    adicionarProduto(db, bala, 1000)
+    adicionarPagamento(db, 'dinheiro', 50)
+    const c = finalizarVenda(db, true)
+    cancelarVendaFinalizada(db, b.id)
+
+    const lista = consultarVendas(db, { periodo: hoje, numero: null })
+    expect(lista.map((v) => [v.id, v.status, v.total, v.saldoDevedor, v.podeCancelar])).toEqual([
+      [c.id, 'finalizada', 100, 50, true],
+      [b.id, 'cancelada', 2000, 0, false],
+      [a.id, 'finalizada', 2000, 0, true]
+    ])
+    expect(lista[1]).toMatchObject({ operador: 'Maria', itens: 1, formas: ['pix', 'debito'] })
+    expect(consultarVendas(db, { periodo: { de: '2000-01-01', ate: '2000-01-01' }, numero: a.id }).map((v) => v.id)).toEqual([a.id])
+    expect(consultarVendas(db, { periodo: { de: '2000-01-01', ate: '2000-01-01' }, numero: null })).toEqual([])
+    expect(() => consultarVendas(db, { periodo: hoje, numero: -1 })).toThrow(/inválido/)
+
+    // Caixa fechado: a venda dele não se cancela mais.
+    fecharCaixa(db, { dinheiro: 2050, debito: 0, credito: 0, pix: 0 }, null)
+    expect(consultarVendas(db, { periodo: hoje, numero: a.id })[0]!.podeCancelar).toBe(false)
   })
 
   it('margem por produto e categoria, com o desconto da venda rateado', () => {
