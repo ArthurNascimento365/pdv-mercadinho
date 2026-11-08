@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { centavosParaTexto, formatarMoeda, type Centavos } from '@shared/dinheiro'
 import { TABELAS_PRECO, type TabelaPreco } from '@shared/precos'
 import type { Produto } from '@shared/produtos'
-import { lerDesconto, type OpcoesTabela } from '@shared/vendas'
+import { lerDesconto } from '@shared/vendas'
 import { mensagemErro, useTeclas } from '../util'
 
 interface PromptProps {
@@ -208,14 +208,14 @@ export function DescontoVenda({
 }
 
 /**
- * Tabela de preço do item recém-lançado (ou do item escolhido, F4): Enter = PROMOCIONAL,
- * F4 = NORMAL, Esc = deixa como está. Se chegar um dígito (o leitor bipou o próximo
- * produto sem o operador responder), a janela fecha e o dígito segue para o campo de código.
+ * Tabela de preço do item recém-lançado (ou do item escolhido, F4). A janela fica à vista do
+ * cliente, então não mostra preço: setas escolhem, Enter confirma, Esc deixa como está.
+ * Se chegar um dígito (o leitor bipou o próximo produto sem o operador responder), a janela
+ * fecha sem mudar a tabela e o dígito segue para o campo de código.
  */
 export function EscolhaTabela({
   descricao,
   quantidade,
-  opcoes,
   atual,
   onEscolher,
   onDigito,
@@ -223,20 +223,24 @@ export function EscolhaTabela({
 }: {
   descricao: string
   quantidade: string
-  opcoes: OpcoesTabela
   atual: TabelaPreco
   onEscolher: (tabela: TabelaPreco) => void
   onDigito: (caractere: string) => void
   onFechar: () => void
 }): React.JSX.Element {
-  const ref = useRef({ onEscolher, onDigito, onFechar })
-  ref.current = { onEscolher, onDigito, onFechar }
+  const [marcada, setMarcada] = useState<TabelaPreco>(atual)
+  const ref = useRef({ marcada, onEscolher, onDigito, onFechar })
+  ref.current = { marcada, onEscolher, onDigito, onFechar }
 
   useEffect(() => {
     const ouvir = (e: KeyboardEvent): void => {
       const acao: Record<string, () => void> = {
-        Enter: () => ref.current.onEscolher('varejo'),
-        F4: () => ref.current.onEscolher('a_prazo'),
+        ArrowLeft: () => setMarcada('varejo'),
+        ArrowUp: () => setMarcada('varejo'),
+        ArrowRight: () => setMarcada('a_prazo'),
+        ArrowDown: () => setMarcada('a_prazo'),
+        Tab: () => setMarcada((m) => (m === 'varejo' ? 'a_prazo' : 'varejo')),
+        Enter: () => ref.current.onEscolher(ref.current.marcada),
         Escape: () => ref.current.onFechar()
       }
       if (acao[e.key]) {
@@ -251,16 +255,14 @@ export function EscolhaTabela({
     return () => window.removeEventListener('keydown', ouvir)
   }, [])
 
-  // O preço NORMAL não aparece: a janela fica à vista do cliente.
-  const opcao = (tabela: TabelaPreco, tecla: string, preco: Centavos | null): React.JSX.Element => (
+  const opcao = (tabela: TabelaPreco): React.JSX.Element => (
     <button
-      className={`tabela-opcao ${tabela === atual ? 'tabela-atual' : ''}`}
+      className={`tabela-opcao ${tabela === marcada ? 'tabela-atual' : ''}`}
+      aria-pressed={tabela === marcada}
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => onEscolher(tabela)}
     >
-      <kbd>{tecla}</kbd>
       <span>{TABELAS_PRECO[tabela]}</span>
-      {preco !== null && <strong>{formatarMoeda(preco)}</strong>}
     </button>
   )
 
@@ -272,10 +274,13 @@ export function EscolhaTabela({
           <b>{descricao}</b> · {quantidade}
         </p>
         <div className="tabela-opcoes">
-          {opcao('varejo', 'Enter', opcoes.varejo)}
-          {opcao('a_prazo', 'F4', null)}
+          {opcao('varejo')}
+          {opcao('a_prazo')}
         </div>
-        <p className="dica">Preço PROMOCIONAL por unidade. Esc deixa como está; bipar o próximo produto também confirma.</p>
+        <p className="dica">
+          <kbd>←</kbd> <kbd>→</kbd> escolhe · <kbd>Enter</kbd> confirma · <kbd>Esc</kbd> deixa como está. Bipar o
+          próximo produto mantém a tabela.
+        </p>
       </div>
     </div>
   )

@@ -57,13 +57,32 @@ describe('vendas', () => {
     it('abre a venda no primeiro item e numera em sequência', () => {
       expect(vendaAberta(db)).toBeNull()
       bipar(EAN_LEITE)
-      const v = venda(bipar(EAN_LEITE, 2000))
+      const v = adicionarProduto(db, banana.id, 500)
       expect(v.status).toBe('aberta')
-      expect(v.itens.map((i) => [i.sequencia, i.quantidade, i.total])).toEqual([
-        [1, 1000, 749],
-        [2, 2000, 1498]
+      expect(v.itens.map((i) => [i.sequencia, i.produtoId, i.quantidade])).toEqual([
+        [1, leite.id, 1000],
+        [2, banana.id, 500]
       ])
+      expect(v.total).toBe(749 + v.itens[1]!.total)
+    })
+
+    it('bipar de novo o mesmo produto por unidade soma na mesma linha', () => {
+      bipar(EAN_LEITE)
+      const v = venda(bipar(EAN_LEITE, 2000))
+      expect(v.itens.map((i) => [i.sequencia, i.quantidade, i.total])).toEqual([[1, 3000, 2247]])
       expect(v.total).toBe(2247)
+      // Linha cancelada não recebe a soma: o próximo bipe abre linha nova.
+      cancelarItem(db, v.itens[0]!.id)
+      const depois = venda(bipar(EAN_LEITE))
+      expect(depois.itens.map((i) => [i.sequencia, i.quantidade, i.cancelado])).toEqual([
+        [1, 3000, true],
+        [2, 1000, false]
+      ])
+    })
+
+    it('produto por quilo: cada pesagem fica numa linha', () => {
+      adicionarProduto(db, banana.id, 500)
+      expect(adicionarProduto(db, banana.id, 700).itens.map((i) => i.quantidade)).toEqual([500, 700])
     })
 
     it('etiqueta de balança usa o total impresso', () => {
@@ -248,11 +267,12 @@ describe('vendas', () => {
     })
 
     it('item cancelado não baixa estoque', () => {
-      const v = venda(bipar(EAN_LEITE))
+      const v = adicionarProduto(db, banana.id, 500)
       cancelarItem(db, v.itens[1]!.id)
       adicionarPagamento(db, 'dinheiro', 2247)
       finalizarVenda(db)
       expect(obterProduto(db, leite.id)!.estoqueAtual).toBe(7_000)
+      expect(obterProduto(db, banana.id)!.estoqueAtual).toBe(20_000)
     })
 
     it('venda só com itens cancelados não finaliza', () => {
@@ -280,14 +300,23 @@ describe('vendas', () => {
 
     it('mesma venda com itens em tabelas diferentes', () => {
       aPrazo(1000)
+      const arroz = criarProduto(db, entrada({ descricao: 'Arroz 5kg', precoVenda: 2_500 }))
       bipar(EAN_LEITE)
-      const v = venda(bipar(EAN_LEITE))
-      const depois = alterarTabelaItem(db, v.itens[1]!.id, 'a_prazo')
+      const v = adicionarProduto(db, arroz.id, 1000)
+      const depois = alterarTabelaItem(db, v.itens[0]!.id, 'a_prazo')
       expect(depois.itens.map((i) => [i.tabela, i.precoUnitario])).toEqual([
-        ['varejo', 749],
-        ['a_prazo', 824] // 8,239
+        ['a_prazo', 824], // 8,239
+        ['varejo', 2_500]
       ])
-      expect(depois.total).toBe(749 + 824)
+      expect(depois.total).toBe(824 + 2_500)
+    })
+
+    it('somar na linha mantém a tabela escolhida', () => {
+      aPrazo(1000)
+      const v = venda(bipar(EAN_LEITE))
+      alterarTabelaItem(db, v.itens[0]!.id, 'a_prazo')
+      const depois = venda(bipar(EAN_LEITE))
+      expect(depois.itens.map((i) => [i.tabela, i.quantidade, i.total])).toEqual([['a_prazo', 2000, 1648]])
     })
 
     it('preço fixo do produto vale no lugar do percentual', () => {

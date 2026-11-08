@@ -30,7 +30,7 @@ type Modal =
   | { tipo: 'pagamento' }
   | { tipo: 'previa'; vendaId: number; documento: Diagramado }
   | { tipo: 'cliente' }
-  | { tipo: 'tabela'; item: ItemVenda; opcoes: OpcoesTabela }
+  | { tipo: 'tabela'; item: ItemVenda }
 
 const qtd = (q: number, unidade: 'UN' | 'KG'): string =>
   unidade === 'KG' ? `${quantidadeParaTexto(q, 'KG')} kg` : quantidadeParaTexto(q, 'UN')
@@ -140,6 +140,8 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   /** Item que acabou de ser cancelado: fica em destaque alguns segundos para o cliente ver. */
   const [recemCancelado, setRecemCancelado] = useState<ItemVenda | null>(null)
   const [selecionado, setSelecionado] = useState(-1)
+  /** Último item lançado ou somado (bipar de novo o mesmo produto soma na linha que já existe). */
+  const [ultimoId, setUltimoId] = useState<number | null>(null)
   const [codigo, setCodigo] = useState('')
   const [modal, setModal] = useState<Modal | null>(null)
   const [aviso, setAviso] = useState<{ erro: boolean; texto: string } | null>(null)
@@ -155,7 +157,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   const cancelados = itens.length - ativos.length
   const item = itens[selecionado] ?? null
   // Para o cliente: o item que acabou de passar (ou o que acabou de sair, por alguns segundos).
-  const destaque = recemCancelado ?? ativos.at(-1) ?? null
+  const destaque = recemCancelado ?? ativos.find((i) => i.id === ultimoId) ?? ativos.at(-1) ?? null
   // Subtotal antes de qualquer desconto; a diferença para o total é o que o cliente economizou.
   const bruto = ativos.reduce((s, i) => s + i.totalBruto, 0)
   const economia = Math.max(0, bruto - (venda?.total ?? 0))
@@ -215,11 +217,18 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   }
 
   function itemAdicionado(v: Venda): void {
-    atualizar(v)
+    const antes = venda?.id === v.id ? venda.itens : []
+    // Linha nova ou linha que já existia e teve a quantidade somada.
+    const novo = v.itens.find((i) => !antes.some((a) => a.id === i.id))
+    const alvo =
+      novo ?? v.itens.find((i) => i.quantidade !== antes.find((a) => a.id === i.id)?.quantidade) ?? v.itens.at(-1)
+    setVenda(v)
+    setSelecionado(alvo ? v.itens.indexOf(alvo) : v.itens.length - 1)
+    setUltimoId(alvo?.id ?? null)
     setFinalizada(null)
     setRecemCancelado(null)
     setAviso(null)
-    const novo = v.itens.at(-1)
+    // A tabela se escolhe uma vez por linha: somar na linha não pergunta de novo.
     if (novo && perguntarTabela.current) void abrirTabela(novo, false)
   }
 
@@ -230,7 +239,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   async function abrirTabela(alvo: ItemVenda, avisar: boolean): Promise<void> {
     try {
       const opcoes = await window.pdv.vendas.opcoesTabela(alvo.id)
-      if (opcoes) setModal({ tipo: 'tabela', item: alvo, opcoes })
+      if (opcoes) setModal({ tipo: 'tabela', item: alvo })
       else if (avisar) falhar('Este item não tem preço NORMAL diferente do PROMOCIONAL')
     } catch (e) {
       falhar(mensagemErro(e))
@@ -654,7 +663,6 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
         <EscolhaTabela
           descricao={modal.item.descricao}
           quantidade={qtd(modal.item.quantidade, modal.item.unidade)}
-          opcoes={modal.opcoes}
           atual={modal.item.tabela}
           onEscolher={(tabela) => {
             setModal(null)

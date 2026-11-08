@@ -42,7 +42,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - **08/11 — tabelas de preço PROMOCIONAL e NORMAL por item** (tabela não aparece na lista nem
   no cupom; janela não mostra o preço NORMAL).
 - Instalador `dist/PDV Mercadinho Setup 0.1.10.exe` gerado em 08/11/2026 (tabelas de preço
-  PROMOCIONAL e NORMAL por item). Schema do banco na versão 8. 308 testes (29 arquivos).
+  PROMOCIONAL e NORMAL por item).
+- **08/11 — janela da tabela sem preço** (setas + Enter) e **mesmo produto soma na QTD** da linha
+  (sem instalador ainda). Schema do banco na versão 8. 311 testes (29 arquivos).
 
 ### Em andamento
 
@@ -193,6 +195,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   EAN cadastrado tem prioridade sobre a leitura como etiqueta.
 - Vendas: gravadas desde o primeiro item (status `aberta`, no máximo uma — índice parcial),
   então uma queda do PDV não perde a venda. O item guarda descrição e preço do momento.
+  Produto por unidade bipado/escolhido de novo soma na linha ativa mais recente dele (mantém a
+  tabela de preço e o desconto da linha; a janela da tabela não reabre); KG (cada pesagem) e
+  etiqueta de balança ficam em linhas separadas, e linha cancelada não recebe soma.
   Item e venda cancelados ficam registrados, nunca apagados. Estoque baixa só ao finalizar e
   volta ao cancelar uma venda finalizada. Só dinheiro pode passar do restante (gera troco);
   cartão/Pix são no valor exato, revalidados na finalização. Desconto da venda é limitado
@@ -251,14 +256,14 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - Tabela de preço: **PROMOCIONAL** (id interno `varejo` = preço de venda do cadastro) e **NORMAL**
   (id `a_prazo` = preço maior); os ids ficaram do primeiro nome, só os rótulos mudaram
   (`TABELAS_PRECO`). Escolhida **por item**. Nem o cupom nem a lista da tela Vender citam a tabela:
-  só o preço cobrado. A janela de escolha fica à vista do cliente, então mostra só o preço
-  PROMOCIONAL; a opção NORMAL aparece sem preço. Preço NORMAL = `produtos.preco_a_prazo` (fixo,
+  só o preço cobrado. A janela de escolha fica à vista do cliente, então não mostra preço
+  nenhum: só os nomes PROMOCIONAL e NORMAL. Preço NORMAL = `produtos.preco_a_prazo` (fixo,
   maior que o de venda) ou, sem ele, preço de tabela + percentual de Configurações
   (`tabela.a_prazo.percentual` em centésimos de %, `precoAPrazo` em shared/precos.ts). O item
   guarda `venda_itens.tabela_preco`; `reprecificarProduto` respeita a tabela de cada linha
   (atacarejo/promoção valem só na PROMOCIONAL). Com `tabela.a_prazo.perguntar` ligado, a janela
-  `EscolhaTabela` abre após cada item lançado que tenha preço a prazo diferente: Enter = PROMOCIONAL,
-  F4 = NORMAL, Esc fecha; dígito ou `*` confirma a tabela atual e vai para o campo de código
+  `EscolhaTabela` abre após cada linha nova que tenha preço a prazo diferente: setas (← ↑ / → ↓, Tab)
+  escolhem, Enter confirma a marcada (começa na atual), Esc fecha; dígito ou `*` mantém a tabela e vai para o campo de código
   (o leitor nunca perde um bipe). F4 na tela Vender troca a tabela do item selecionado.
   Etiqueta de balança não tem preço NORMAL. CSV aceita `preco_a_prazo`.
 - Importação CSV não sobrescreve estoque de produto existente; estoque muda por entrada

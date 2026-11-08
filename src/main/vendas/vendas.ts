@@ -164,6 +164,35 @@ function inserirItem(db: Banco, produto: Produto, quantidade: Milesimos, totalEt
     const bruto = totalEtiqueta ?? totalItem(tabela.preco, quantidade)
     if (bruto === 0) throw new ErroNegocio('Quantidade pequena demais: o item sairia de graça')
 
+    // Produto por unidade já na venda: soma na mesma linha (que mantém a tabela de preço).
+    // KG (cada pesagem) e etiqueta de balança ficam em linhas separadas.
+    const existente =
+      totalEtiqueta === null && produto.unidade === 'UN'
+        ? (db
+            .prepare(
+              `SELECT id, quantidade, preco_unitario, desconto FROM venda_itens
+               WHERE venda_id = ? AND produto_id = ? AND cancelado = 0 AND tipo_preco <> 'etiqueta'
+               ORDER BY sequencia DESC LIMIT 1`
+            )
+            .get(vendaId, produto.id) as
+            | { id: number; quantidade: number; preco_unitario: number; desconto: number }
+            | undefined)
+        : undefined
+    if (existente) {
+      const q = existente.quantidade + quantidade
+      if (q > QUANTIDADE_MAXIMA) throw new ErroNegocio('Quantidade grande demais')
+      const novoBruto = totalItem(existente.preco_unitario, q)
+      db.prepare('UPDATE venda_itens SET quantidade = ?, total_bruto = ?, total = ? WHERE id = ?').run(
+        q,
+        novoBruto,
+        novoBruto - existente.desconto,
+        existente.id
+      )
+      reprecificarProduto(db, vendaId, produto)
+      recalcular(db, vendaId)
+      return obterVenda(db, vendaId)!
+    }
+
     const { proxima } = db
       .prepare('SELECT COALESCE(MAX(sequencia), 0) + 1 AS proxima FROM venda_itens WHERE venda_id = ?')
       .get(vendaId) as { proxima: number }

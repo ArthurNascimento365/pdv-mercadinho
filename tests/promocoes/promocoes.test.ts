@@ -66,8 +66,9 @@ describe('promoção e atacarejo', () => {
   })
 
   it('atacarejo pela quantidade total do produto na venda, e volta se cancelar', () => {
-    // Refrigerante R$ 9,00; a partir de 3 un, R$ 8,00.
-    const p = criarProduto(db, entrada({ precoVenda: 900, atacadoQuantidade: 3000, atacadoPreco: 800 }))
+    // Queijo a granel R$ 9,00/kg; a partir de 3 kg, R$ 8,00. Cada pesagem é uma linha
+    // (produto por unidade soma na mesma linha).
+    const p = criarProduto(db, entrada({ unidade: 'KG', precoVenda: 900, atacadoQuantidade: 3000, atacadoPreco: 800 }))
     adicionarProduto(db, p.id, 1000)
     adicionarProduto(db, p.id, 1000)
     expect(vendaAberta(db)!.total).toBe(1800)
@@ -93,7 +94,7 @@ describe('promoção e atacarejo', () => {
   })
 
   it('atacarejo mantém o desconto do item, limitado ao novo valor', () => {
-    const p = criarProduto(db, entrada({ precoVenda: 900, atacadoQuantidade: 2000, atacadoPreco: 500 }))
+    const p = criarProduto(db, entrada({ unidade: 'KG', precoVenda: 900, atacadoQuantidade: 2000, atacadoPreco: 500 }))
     const v1 = adicionarProduto(db, p.id, 1000)
     descontoItem(db, v1.itens[0]!.id, 800)
     const v2 = adicionarProduto(db, p.id, 1000)
