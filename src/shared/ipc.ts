@@ -14,7 +14,8 @@ import type {
   ResultadoImportacao
 } from './produtos'
 import type { Centavos, Milesimos } from './dinheiro'
-import type { FormaPagamento, ResultadoAdicionar, Venda } from './vendas'
+import type { FormaPagamento, OpcoesTabela, ResultadoAdicionar, Venda } from './vendas'
+import type { ConfigAPrazo, TabelaPreco } from './precos'
 import type { Contagem, ResumoCaixa } from './caixa'
 import type {
   AlertasValidade,
@@ -83,6 +84,10 @@ export interface CanaisIpc {
   'vendas:adicionarCodigo': { args: [codigo: string, quantidade: Milesimos | null]; retorno: ResultadoAdicionar }
   'vendas:adicionarProduto': { args: [produtoId: number, quantidade: Milesimos]; retorno: Venda }
   'vendas:alterarQuantidade': { args: [itemId: number, quantidade: Milesimos]; retorno: Venda }
+  'vendas:opcoesTabela': { args: [itemId: number]; retorno: OpcoesTabela | null }
+  'vendas:alterarTabelaItem': { args: [itemId: number, tabela: TabelaPreco]; retorno: Venda }
+  'precos:configAPrazo': { args: []; retorno: ConfigAPrazo }
+  'precos:salvarConfigAPrazo': { args: [cfg: ConfigAPrazo]; retorno: ConfigAPrazo }
   'vendas:descontoItem': { args: [itemId: number, desconto: Centavos]; retorno: Venda }
   'vendas:descontoVenda': { args: [desconto: Centavos]; retorno: Venda }
   'vendas:cancelarItem': { args: [itemId: number]; retorno: Venda }
@@ -220,6 +225,9 @@ export interface PdvApi {
     adicionarCodigo(codigo: string, quantidade: Milesimos | null): Promise<ResultadoAdicionar>
     adicionarProduto(produtoId: number, quantidade: Milesimos): Promise<Venda>
     alterarQuantidade(itemId: number, quantidade: Milesimos): Promise<Venda>
+    /** Preço do item em cada tabela; null quando não há o que escolher. */
+    opcoesTabela(itemId: number): Promise<OpcoesTabela | null>
+    alterarTabelaItem(itemId: number, tabela: TabelaPreco): Promise<Venda>
     descontoItem(itemId: number, desconto: Centavos): Promise<Venda>
     descontoVenda(desconto: Centavos): Promise<Venda>
     cancelarItem(itemId: number): Promise<Venda>
@@ -288,6 +296,11 @@ export interface PdvApi {
     receber(id: number, valor: Centavos, forma: FormaPagamento): Promise<{ lancamentoId: number; cliente: Cliente }>
     cobranca(id: number): Promise<Cobranca>
     imprimirRecebimento(lancamentoId: number): Promise<void>
+  }
+  /** Tabela de preço "A prazo" (interna: não aparece no cupom). */
+  precos: {
+    configAPrazo(): Promise<ConfigAPrazo>
+    salvarConfigAPrazo(cfg: ConfigAPrazo): Promise<ConfigAPrazo>
   }
   pix: {
     obterConfig(): Promise<ConfigPix>

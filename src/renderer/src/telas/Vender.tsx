@@ -2,11 +2,18 @@ import { useEffect, useRef, useState } from 'react'
 import { centavosParaTexto, formatarMoeda, lerQuantidade, quantidadeParaTexto } from '@shared/dinheiro'
 import type { ResumoCaixa } from '@shared/caixa'
 import type { Produto } from '@shared/produtos'
-import { FORMAS_PAGAMENTO, lerDesconto, lerEntradaCaixa, type ItemVenda, type Venda } from '@shared/vendas'
+import {
+  FORMAS_PAGAMENTO,
+  lerDesconto,
+  lerEntradaCaixa,
+  type ItemVenda,
+  type OpcoesTabela,
+  type Venda
+} from '@shared/vendas'
 import type { Diagramado } from '@shared/impressao'
 import { BuscaCliente } from '../componentes/Clientes'
 import { Icone } from '../componentes/Icone'
-import { BuscaProduto, Confirmar, DescontoVenda, Prompt } from '../componentes/Modais'
+import { BuscaProduto, Confirmar, DescontoVenda, EscolhaTabela, Prompt } from '../componentes/Modais'
 import { PesoBalanca } from '../componentes/PesoBalanca'
 import { PreviaCupom } from '../componentes/PreviaCupom'
 import { bipeErro, mensagemErro, useTeclas } from '../util'
@@ -23,6 +30,7 @@ type Modal =
   | { tipo: 'pagamento' }
   | { tipo: 'previa'; vendaId: number; documento: Diagramado }
   | { tipo: 'cliente' }
+  | { tipo: 'tabela'; item: ItemVenda; opcoes: OpcoesTabela }
 
 const qtd = (q: number, unidade: 'UN' | 'KG'): string =>
   unidade === 'KG' ? `${quantidadeParaTexto(q, 'KG')} kg` : quantidadeParaTexto(q, 'UN')
@@ -38,6 +46,7 @@ const GRUPOS: { nome: string; botoes: { tecla: string; rotulo: string; perigo?: 
     botoes: [
       { tecla: 'F2', rotulo: 'Buscar produto' },
       { tecla: 'F5', rotulo: 'Desconto no item' },
+      { tecla: 'F4', rotulo: 'Tabela do item' },
       { tecla: 'F7', rotulo: 'Cancelar item', perigo: true }
     ]
   },
@@ -151,6 +160,15 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   const bruto = ativos.reduce((s, i) => s + i.totalBruto, 0)
   const economia = Math.max(0, bruto - (venda?.total ?? 0))
 
+  // Perguntar a tabela a cada item (Configurações → Tabela A prazo). Ref: lido dentro de callbacks.
+  const perguntarTabela = useRef(true)
+  useEffect(() => {
+    window.pdv.precos
+      .configAPrazo()
+      .then((c) => (perguntarTabela.current = c.perguntar))
+      .catch(() => (perguntarTabela.current = false))
+  }, [])
+
   // Retoma a venda que estava aberta (inclusive depois de uma queda do PDV).
   useEffect(() => {
     Promise.all([window.pdv.caixa.paraVender(), window.pdv.vendas.atual()])
@@ -201,6 +219,22 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
     setFinalizada(null)
     setRecemCancelado(null)
     setAviso(null)
+    const novo = v.itens.at(-1)
+    if (novo && perguntarTabela.current) void abrirTabela(novo, false)
+  }
+
+  /**
+   * Janela da tabela de preço do item (Varejo ou A prazo). Só abre quando o produto tem
+   * preço a prazo diferente; `avisar` = o operador pediu (F4) e deve saber se não houver.
+   */
+  async function abrirTabela(alvo: ItemVenda, avisar: boolean): Promise<void> {
+    try {
+      const opcoes = await window.pdv.vendas.opcoesTabela(alvo.id)
+      if (opcoes) setModal({ tipo: 'tabela', item: alvo, opcoes })
+      else if (avisar) falhar('Este item não tem preço a prazo diferente do varejo')
+    } catch (e) {
+      falhar(mensagemErro(e))
+    }
   }
 
   useEffect(() => {
@@ -301,6 +335,9 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   const acoes: Record<string, () => void> = {
     F2: () => setModal({ tipo: 'busca' }),
     F3: () => (venda ? setModal({ tipo: 'cliente' }) : falhar('Bipe o primeiro item antes de identificar o cliente')),
+    F4: () => {
+      if (exigirItem()) void abrirTabela(item!, true)
+    },
     F5: () => {
       if (exigirItem()) setModal({ tipo: 'descontoItem', item: item! })
     },
@@ -411,6 +448,11 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
                     <span className="caixa-desc">{i.descricao}</span>
                     {i.tipoPreco === 'promocao' && <span className="etiqueta oferta">oferta</span>}
                     {i.tipoPreco === 'atacado' && <span className="etiqueta oferta">atacado</span>}
+                    {i.tabela === 'a_prazo' && (
+                      <span className="etiqueta etiqueta-prazo" title="Tabela A prazo (interno: não sai no cupom)">
+                        AP
+                      </span>
+                    )}
                   </td>
                   <td className="num">
                     <CelulaEditavel
@@ -608,6 +650,27 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
           onImprimir={() => {
             setModal(null)
             void reimprimir(modal.vendaId)
+          }}
+          onFechar={() => setModal(null)}
+        />
+      )}
+
+      {modal?.tipo === 'tabela' && (
+        <EscolhaTabela
+          descricao={modal.item.descricao}
+          quantidade={qtd(modal.item.quantidade, modal.item.unidade)}
+          opcoes={modal.opcoes}
+          atual={modal.item.tabela}
+          onEscolher={(tabela) => {
+            setModal(null)
+            if (tabela !== modal.item.tabela) {
+              void executar(async () => atualizar(await window.pdv.vendas.alterarTabelaItem(modal.item.id, tabela), false))
+            }
+          }}
+          onDigito={(c) => {
+            // Bipou o próximo produto sem responder: fica na tabela atual e o código segue.
+            setModal(null)
+            setCodigo((atual) => atual + c)
           }}
           onFechar={() => setModal(null)}
         />

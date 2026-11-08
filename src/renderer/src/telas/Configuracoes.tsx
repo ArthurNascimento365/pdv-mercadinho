@@ -6,6 +6,7 @@ import type { CodigoResolvido } from '@shared/produtos'
 import { PreviaCupom } from '../componentes/PreviaCupom'
 import { mensagemErro, useTeclas } from '../util'
 import type { ConfigPix } from '@shared/pix'
+import { lerPercentual, percentualParaTexto } from '@shared/precos'
 import { ConfigFiado } from './ConfigFiado'
 import { ConfigHardware } from './ConfigHardware'
 
@@ -25,6 +26,8 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
   const [pix, setPix] = useState<ConfigPix | null>(null)
   const [diasAtraso, setDiasAtraso] = useState('30')
   const [controleCaixa, setControleCaixa] = useState(true)
+  const [percentualPrazo, setPercentualPrazo] = useState('0')
+  const [perguntarTabela, setPerguntarTabela] = useState(true)
   const [modalFiado, setModalFiado] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -37,10 +40,13 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
       window.pdv.hardware.obterConfig(),
       window.pdv.pix.obterConfig(),
       window.pdv.config.obter('fiado.dias_atraso'),
-      window.pdv.caixa.controleLigado()
+      window.pdv.caixa.controleLigado(),
+      window.pdv.precos.configAPrazo()
     ])
-      .then(([nome, f, hw, p, dias, controle]) => {
+      .then(([nome, f, hw, p, dias, controle, prazo]) => {
         setControleCaixa(controle)
+        setPercentualPrazo(percentualParaTexto(prazo.percentual))
+        setPerguntarTabela(prazo.perguntar)
         setNomeLoja(nome ?? '')
         setFormato(f)
         setImpressora(hw.impressora)
@@ -64,6 +70,9 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
       await window.pdv.config.definir('loja.nome', nomeLoja.trim())
       await window.pdv.config.definir('fiado.dias_atraso', String(dias))
       await window.pdv.caixa.definirControle(controleCaixa)
+      const percentual = lerPercentual(percentualPrazo || '0')
+      if (percentual === null) throw new Error('Percentual a prazo inválido (ex.: 8 ou 7,5)')
+      await window.pdv.precos.salvarConfigAPrazo({ percentual, perguntar: perguntarTabela })
       setPix(await window.pdv.pix.salvarConfig(pix))
       await window.pdv.balanca.definirFormato(formato)
       setImpressora(await window.pdv.hardware.salvarImpressora(impressora))
@@ -129,6 +138,34 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
           {controleCaixa
             ? 'Ligado: para vender, alguém abre o caixa (F4) com o nome do operador e o fundo de troco, e no fim do turno fecha com a contagem.'
             : 'Desligado: para a loja em que o dono é o único operador. Vende direto, sem abrir nem fechar o caixa; o PDV mantém um caixa aberto em nome de "Dono". Sangria e fechamento continuam disponíveis no F4, se quiser usar.'}
+        </p>
+      </section>
+
+      <section className="secao">
+        <h3>Tabela de preço A prazo</h3>
+        <p className="dica">
+          Na venda, cada item pode ir para a tabela Varejo ou A prazo. É interno: o cupom mostra só o preço
+          cobrado. O produto pode ter um preço a prazo fixo no cadastro; sem ele, vale o percentual abaixo.
+        </p>
+        <div className="grade">
+          <label>
+            Acréscimo a prazo (%)
+            <input
+              value={percentualPrazo}
+              inputMode="decimal"
+              placeholder="0"
+              onChange={(e) => setPercentualPrazo(e.target.value)}
+            />
+          </label>
+          <label className="opcao">
+            <input type="checkbox" checked={perguntarTabela} onChange={(e) => setPerguntarTabela(e.target.checked)} />
+            Perguntar a tabela a cada item lançado
+          </label>
+        </div>
+        <p className="dica">
+          {perguntarTabela
+            ? 'A cada item com preço a prazo diferente, abre a janela: Enter = Varejo, F4 = A prazo. Bipar o próximo produto também confirma Varejo.'
+            : 'Os itens entram no Varejo; para levar um item para A prazo, selecione-o na lista e tecle F4.'}
         </p>
       </section>
 

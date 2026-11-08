@@ -1,5 +1,5 @@
 import { lerMoeda, lerQuantidade, type Centavos, type Milesimos } from './dinheiro'
-import type { TipoPreco } from './precos'
+import type { TabelaPreco, TipoPreco } from './precos'
 import type { Produto, Unidade } from './produtos'
 
 export const FORMAS_PAGAMENTO = {
@@ -36,6 +36,14 @@ export interface ItemVenda {
   tipoPreco: TipoPreco
   /** Preço de tabela (normal ou promoção) quando o item entrou. */
   precoTabela: Centavos
+  /** Tabela de preço do item (interna: o cupom não mostra). */
+  tabela: TabelaPreco
+}
+
+/** Preço unitário do item em cada tabela, para o operador escolher. */
+export interface OpcoesTabela {
+  varejo: Centavos
+  aPrazo: Centavos
 }
 
 export interface PagamentoVenda {

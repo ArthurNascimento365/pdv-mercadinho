@@ -37,6 +37,7 @@ const ALIASES: Record<Campo, string[]> = {
   unidade: ['unidade', 'un', 'und', 'unid'],
   precoVenda: ['preco_venda', 'preco_de_venda', 'preco', 'venda', 'valor', 'valor_venda'],
   precoCusto: ['preco_custo', 'preco_de_custo', 'custo', 'valor_custo'],
+  precoAPrazo: ['preco_a_prazo', 'preco_prazo', 'a_prazo', 'valor_a_prazo'],
   categoria: ['categoria', 'grupo', 'departamento', 'secao'],
   estoqueAtual: ['estoque', 'estoque_atual', 'quantidade', 'qtd', 'saldo'],
   estoqueMinimo: ['estoque_minimo', 'minimo', 'est_minimo'],
@@ -105,6 +106,8 @@ function lerLinha(celulas: string[], colunas: Partial<Record<Campo, number>>): P
   if (precoVenda !== null) parcial.precoVenda = lerPreco(precoVenda, 'Preço de venda')
   const precoCusto = valor('precoCusto')
   if (precoCusto !== null) parcial.precoCusto = lerPreco(precoCusto, 'Preço de custo')
+  const precoAPrazo = valor('precoAPrazo')
+  if (precoAPrazo !== null) parcial.precoAPrazo = lerPreco(precoAPrazo, 'Preço a prazo')
 
   const categoria = valor('categoria')
   if (categoria !== null) parcial.categoria = categoria

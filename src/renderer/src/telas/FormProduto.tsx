@@ -21,6 +21,7 @@ interface Campos {
   unidade: Unidade
   precoVenda: string
   precoCusto: string
+  precoAPrazo: string
   categoria: string
   estoqueAtual: string
   estoqueMinimo: string
@@ -39,6 +40,7 @@ function camposDe(p: Produto | null): Campos {
     unidade: p?.unidade ?? 'UN',
     precoVenda: p ? centavosParaTexto(p.precoVenda) : '',
     precoCusto: p?.precoCusto != null ? centavosParaTexto(p.precoCusto) : '',
+    precoAPrazo: p?.precoAPrazo != null ? centavosParaTexto(p.precoAPrazo) : '',
     categoria: p?.categoria ?? '',
     estoqueAtual: p ? quantidadeParaTexto(p.estoqueAtual, p.unidade) : '0',
     estoqueMinimo: p ? quantidadeParaTexto(p.estoqueMinimo, p.unidade) : '0',
@@ -91,6 +93,11 @@ function montarEntrada(c: Campos): ProdutoEntrada {
     precoCusto = lerMoeda(c.precoCusto)
     if (precoCusto === null) throw new Error('Preço de custo inválido')
   }
+  let precoAPrazo: number | null = null
+  if (c.precoAPrazo.trim() !== '') {
+    precoAPrazo = lerMoeda(c.precoAPrazo)
+    if (precoAPrazo === null) throw new Error('Preço a prazo inválido')
+  }
   const estoqueAtual = c.estoqueAtual.trim() === '' ? 0 : lerQuantidade(c.estoqueAtual)
   if (estoqueAtual === null) throw new Error('Estoque atual inválido')
   const estoqueMinimo = c.estoqueMinimo.trim() === '' ? 0 : lerQuantidade(c.estoqueMinimo)
@@ -122,6 +129,7 @@ function montarEntrada(c: Campos): ProdutoEntrada {
     unidade: c.unidade,
     precoVenda,
     precoCusto,
+    precoAPrazo,
     categoria: c.categoria.trim() || null,
     estoqueAtual,
     estoqueMinimo
@@ -375,6 +383,16 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
               onChange={(e) => definir('precoCusto', e.target.value)}
             />
             {margem && <small>Margem: {margem}</small>}
+          </label>
+
+          <label className="largo">
+            Preço a prazo (R$)
+            <input
+              value={campos.precoAPrazo}
+              inputMode="decimal"
+              placeholder="opcional: sem ele, vale o percentual da tabela A prazo (Configurações)"
+              onChange={(e) => definir('precoAPrazo', e.target.value)}
+            />
           </label>
 
           <label className="largo">

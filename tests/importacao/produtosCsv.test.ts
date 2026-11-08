@@ -77,6 +77,13 @@ describe('importação CSV de produtos', () => {
     expect(importarCsvProdutos(db, csv)).toEqual({ criados: 1, atualizados: 0 })
   })
 
+  it('importa o preço a prazo opcional', () => {
+    importarCsvProdutos(db, `ean;descricao;preco_venda;preco_a_prazo\n${EAN};Gás 13kg;110,00;125,00\n`)
+    expect(produtoPorEan(db, EAN)?.precoAPrazo).toBe(12_500)
+    const a = analisarCsvProdutos(db, `ean;descricao;preco_venda;preco_a_prazo\n${EAN};Gás 13kg;110,00;100,00\n`)
+    expect(a.erros[0]?.mensagem).toMatch(/maior que o de venda/)
+  })
+
   it('recusa código de balança que já é de outro produto', () => {
     criarProduto(db, entrada({ descricao: 'Banana', unidade: 'KG', codigoBalanca: 12 }))
     const a = analisarCsvProdutos(db, `ean;descricao;preco_venda;plu\n${EAN};Maçã;9,99;12\n`)

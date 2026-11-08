@@ -7,18 +7,21 @@ import type { Produto } from '@shared/produtos'
 import type { ResultadoAdicionar, Venda } from '@shared/vendas'
 import { abrirCaixa } from '../../src/main/caixa/caixa'
 import { abrirBanco, type Banco } from '../../src/main/db/conexao'
+import { definirConfigAPrazo } from '../../src/main/repos/configuracoes'
 import { criarProduto, obterProduto } from '../../src/main/repos/produtos'
 import {
   adicionarPagamento,
   adicionarPorCodigo,
   adicionarProduto,
   alterarQuantidade,
+  alterarTabelaItem,
   cancelarItem,
   cancelarVendaAberta,
   cancelarVendaFinalizada,
   descontoItem,
   descontoVenda,
   finalizarVenda,
+  opcoesTabelaItem,
   removerPagamento,
   ultimaVendaFinalizada,
   vendaAberta
@@ -256,6 +259,76 @@ describe('vendas', () => {
       const v = vendaAberta(db)!
       cancelarItem(db, v.itens[0]!.id)
       expect(() => finalizarVenda(db)).toThrow(/sem itens/)
+    })
+  })
+
+  describe('tabela A prazo (por item, interna)', () => {
+    const aPrazo = (percentual: number) => definirConfigAPrazo(db, { percentual, perguntar: true })
+
+    it('item entra no varejo; a prazo usa o percentual e volta ao varejo', () => {
+      aPrazo(800) // 8%
+      const v = venda(bipar(EAN_LEITE, 2000)) // 2 × 7,49
+      const item = v.itens[0]!
+      expect(item.tabela).toBe('varejo')
+      expect(opcoesTabelaItem(db, item.id)).toEqual({ varejo: 749, aPrazo: 809 }) // 8,0892
+      const ap = alterarTabelaItem(db, item.id, 'a_prazo')
+      expect(ap.itens[0]).toMatchObject({ tabela: 'a_prazo', precoUnitario: 809, total: 1618 })
+      expect(ap.total).toBe(1618)
+      const volta = alterarTabelaItem(db, item.id, 'varejo')
+      expect(volta.itens[0]).toMatchObject({ tabela: 'varejo', precoUnitario: 749, total: 1498 })
+    })
+
+    it('mesma venda com itens em tabelas diferentes', () => {
+      aPrazo(1000)
+      bipar(EAN_LEITE)
+      const v = venda(bipar(EAN_LEITE))
+      const depois = alterarTabelaItem(db, v.itens[1]!.id, 'a_prazo')
+      expect(depois.itens.map((i) => [i.tabela, i.precoUnitario])).toEqual([
+        ['varejo', 749],
+        ['a_prazo', 824] // 8,239
+      ])
+      expect(depois.total).toBe(749 + 824)
+    })
+
+    it('preço fixo do produto vale no lugar do percentual', () => {
+      aPrazo(1000)
+      const gas = criarProduto(db, entrada({ descricao: 'Gás 13kg', precoVenda: 11_000, precoAPrazo: 12_500 }))
+      const v = adicionarProduto(db, gas.id, 1000)
+      expect(opcoesTabelaItem(db, v.itens[0]!.id)).toEqual({ varejo: 11_000, aPrazo: 12_500 })
+      expect(alterarTabelaItem(db, v.itens[0]!.id, 'a_prazo').itens[0]!.precoUnitario).toBe(12_500)
+    })
+
+    it('sem percentual e sem preço fixo não há o que escolher', () => {
+      const v = venda(bipar(EAN_LEITE))
+      expect(opcoesTabelaItem(db, v.itens[0]!.id)).toBeNull()
+    })
+
+    it('mantém o desconto do item e o atacarejo vem antes do acréscimo', () => {
+      aPrazo(1000)
+      const refri = criarProduto(db, entrada({ descricao: 'Refri', precoVenda: 900, atacadoQuantidade: 3000, atacadoPreco: 800 }))
+      const v1 = adicionarProduto(db, refri.id, 3000) // atacado: 3 × 8,00
+      descontoItem(db, v1.itens[0]!.id, 100)
+      const v2 = alterarTabelaItem(db, v1.itens[0]!.id, 'a_prazo')
+      expect(v2.itens[0]).toMatchObject({ precoUnitario: 880, tipoPreco: 'atacado', desconto: 100, total: 2540 })
+      // caiu do atacado (quantidade 2): volta para 9,00 + 10%
+      const v3 = alterarQuantidade(db, v1.itens[0]!.id, 2000)
+      expect(v3.itens[0]).toMatchObject({ precoUnitario: 990, tipoPreco: 'normal', total: 1880 })
+    })
+
+    it('etiqueta de balança fica no preço impresso', () => {
+      aPrazo(1000)
+      const v = venda(bipar(montarEtiquetaBalanca({ codigoProduto: 12, valor: 836 }, FORMATO)))
+      expect(opcoesTabelaItem(db, v.itens[0]!.id)).toBeNull()
+      expect(() => alterarTabelaItem(db, v.itens[0]!.id, 'a_prazo')).toThrow(/etiqueta de balança/)
+    })
+
+    it('recusa tabela inválida e configuração fora da faixa', () => {
+      const v = venda(bipar(EAN_LEITE))
+      expect(() => alterarTabelaItem(db, v.itens[0]!.id, 'atacado')).toThrow(/Tabela de preço inválida/)
+      expect(() => aPrazo(-1)).toThrow(/0% a 100%/)
+      expect(() => criarProduto(db, entrada({ descricao: 'X', precoVenda: 500, precoAPrazo: 500 }))).toThrow(
+        /maior que o de venda/
+      )
     })
   })
 })

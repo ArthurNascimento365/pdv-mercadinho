@@ -13,7 +13,14 @@ import type { Transportes } from '../../src/main/impressao/transportes'
 import { definirConfig } from '../../src/main/repos/configuracoes'
 import { criarProduto } from '../../src/main/repos/produtos'
 import { criarCliente } from '../../src/main/fiado/fiado'
-import { adicionarPagamento, adicionarProduto, definirClienteVenda, finalizarVenda } from '../../src/main/vendas/vendas'
+import { definirConfigAPrazo } from '../../src/main/repos/configuracoes'
+import {
+  adicionarPagamento,
+  adicionarProduto,
+  alterarTabelaItem,
+  definirClienteVenda,
+  finalizarVenda
+} from '../../src/main/vendas/vendas'
 import { entrada } from '../ajuda'
 
 type Envio = { via: string; destino: string; bytes?: Uint8Array; documento?: Diagramado }
@@ -109,6 +116,17 @@ describe('serviço de impressão', () => {
 
       expect(recebido(vender([['credito', 1000], ['credito', 1247]]).id)).toMatch(/22,47$/)
       expect(recebido(vender([['pix', 2247]]).id)).toBeUndefined()
+    })
+
+    it('item a prazo sai no cupom só com o preço cobrado, sem citar a tabela', () => {
+      definirConfigAPrazo(db, { percentual: 1000, perguntar: true })
+      const v = adicionarProduto(db, produtoId, 2000) // 2 × 7,49
+      alterarTabelaItem(db, v.itens[0]!.id, 'a_prazo') // 8,24
+      adicionarPagamento(db, 'dinheiro', 1648)
+      const final = finalizarVenda(db)
+      const texto = new ServicoImpressao(db, transportesFalsos()).previa('venda', final.id).linhas.map((l) => l.texto).join('|')
+      expect(texto).toContain('2 un x 8,24')
+      expect(texto).not.toMatch(/prazo|tabela|acr[eé]scimo|varejo/i)
     })
 
     it('Pix: imprime sem abrir a gaveta', async () => {

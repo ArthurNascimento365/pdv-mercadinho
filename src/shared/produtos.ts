@@ -25,6 +25,8 @@ export interface Produto {
   promocaoFim: string | null
   atacadoQuantidade: Milesimos | null
   atacadoPreco: Centavos | null
+  /** Preço fixo na tabela "A prazo" (null = preço de varejo + percentual da configuração). */
+  precoAPrazo: Centavos | null
 }
 
 /** O que o formulário (ou a importação) manda para criar/atualizar um produto. */
@@ -45,6 +47,8 @@ export interface ProdutoEntrada {
   /** Atacarejo: a partir desta quantidade na venda, este preço. */
   atacadoQuantidade?: Milesimos | null
   atacadoPreco?: Centavos | null
+  /** Preço fixo na tabela "A prazo"; ausente = usa o percentual da configuração. */
+  precoAPrazo?: Centavos | null
 }
 
 export interface Categoria {

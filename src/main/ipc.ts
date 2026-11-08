@@ -76,8 +76,10 @@ import { decodificarArquivo } from './importacao/csv'
 import { analisarCsvProdutos, importarCsvProdutos, MODELO_CSV } from './importacao/produtosCsv'
 import {
   definirConfig,
+  definirConfigAPrazo,
   definirFormatoBalanca,
   obterConfig,
+  obterConfigAPrazo,
   obterFormatoBalanca
 } from './repos/configuracoes'
 import {
@@ -99,6 +101,7 @@ import {
   adicionarPorCodigo,
   adicionarProduto,
   alterarQuantidade,
+  alterarTabelaItem,
   cancelarItem,
   cancelarVendaAberta,
   cancelarVendaFinalizada,
@@ -106,6 +109,7 @@ import {
   descontoItem,
   descontoVenda,
   finalizarVenda,
+  opcoesTabelaItem,
   removerPagamento,
   ultimaVendaFinalizada,
   vendaAberta
@@ -198,6 +202,10 @@ export function registrarIpc({ db, caminhoBanco, impressao, backup }: ContextoIp
   })
   tratar('vendas:adicionarProduto', (produtoId, quantidade) => adicionarProduto(db, produtoId, quantidade))
   tratar('vendas:alterarQuantidade', (itemId, quantidade) => alterarQuantidade(db, itemId, quantidade))
+  tratar('vendas:opcoesTabela', (itemId) => opcoesTabelaItem(db, itemId))
+  tratar('vendas:alterarTabelaItem', (itemId, tabela) => alterarTabelaItem(db, itemId, tabela))
+  tratar('precos:configAPrazo', () => obterConfigAPrazo(db))
+  tratar('precos:salvarConfigAPrazo', (cfg) => definirConfigAPrazo(db, cfg))
   tratar('vendas:descontoItem', (itemId, desconto) => descontoItem(db, itemId, desconto))
   tratar('vendas:descontoVenda', (desconto) => descontoVenda(db, desconto))
   tratar('vendas:cancelarItem', (itemId) => cancelarItem(db, itemId))

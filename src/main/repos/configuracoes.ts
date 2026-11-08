@@ -1,4 +1,5 @@
 import { FORMATO_BALANCA_PADRAO, type FormatoBalanca } from '@shared/balanca'
+import { CONFIG_A_PRAZO_PADRAO, type ConfigAPrazo } from '@shared/precos'
 import type { Banco } from '../db/conexao'
 import { emTransacao } from '../db/transacao'
 import { ErroNegocio } from '../erros'
@@ -17,6 +18,28 @@ export function definirConfig(db: Banco, chave: string, valor: string): void {
        valor = excluded.valor,
        atualizado_em = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`
   ).run(chave, valor)
+}
+
+export function obterConfigAPrazo(db: Banco): ConfigAPrazo {
+  const percentual = Number(obterConfig(db, 'tabela.a_prazo.percentual'))
+  return {
+    percentual: Number.isSafeInteger(percentual) && percentual >= 0 ? percentual : CONFIG_A_PRAZO_PADRAO.percentual,
+    perguntar: obterConfig(db, 'tabela.a_prazo.perguntar') !== 'nao'
+  }
+}
+
+export function definirConfigAPrazo(db: Banco, dado: unknown): ConfigAPrazo {
+  const c = (dado ?? {}) as Partial<Record<keyof ConfigAPrazo, unknown>>
+  const p = c.percentual
+  if (typeof p !== 'number' || !Number.isSafeInteger(p) || p < 0 || p > 10_000) {
+    throw new ErroNegocio('Percentual a prazo: de 0% a 100%')
+  }
+  if (typeof c.perguntar !== 'boolean') throw new ErroNegocio('Opção de perguntar a tabela inválida')
+  emTransacao(db, () => {
+    definirConfig(db, 'tabela.a_prazo.percentual', String(p))
+    definirConfig(db, 'tabela.a_prazo.perguntar', c.perguntar ? 'sim' : 'nao')
+  })
+  return obterConfigAPrazo(db)
 }
 
 export function obterFormatoBalanca(db: Banco): FormatoBalanca {

@@ -1,10 +1,11 @@
 import type { FormatoBalanca } from '@shared/balanca'
 import { formatarMoeda, totalItem, type Centavos, type Milesimos } from '@shared/dinheiro'
-import { hojeLocal, precoComAtacado, precoTabela, type TipoPreco } from '@shared/precos'
+import { hojeLocal, precoAPrazo, precoComAtacado, precoTabela, tabelaValida, type TabelaPreco, type TipoPreco } from '@shared/precos'
 import type { Produto, Unidade } from '@shared/produtos'
 import {
   formaValida,
   type ItemVenda,
+  type OpcoesTabela,
   type PagamentoVenda,
   type ResultadoAdicionar,
   type Venda
@@ -16,6 +17,7 @@ import { exigirCaixaAberto, idCaixaAberto } from '../caixa/caixa'
 import { lancarFiado, obterCliente, verificarCredito } from '../fiado/fiado'
 import { movimentarEstoque } from '../repos/estoque'
 import { conferirSenhaGerente, temSenhaGerente } from '../seguranca'
+import { obterConfigAPrazo } from '../repos/configuracoes'
 import { obterProduto } from '../repos/produtos'
 import { resolverCodigo } from '../servicos/leitorCodigo'
 
@@ -53,6 +55,7 @@ interface LinhaItem {
   cancelado: number
   preco_tabela: number | null
   tipo_preco: TipoPreco
+  tabela_preco: TabelaPreco
 }
 
 export function obterVenda(db: Banco, id: number): Venda | null {
@@ -79,7 +82,8 @@ export function obterVenda(db: Banco, id: number): Venda | null {
       total: i.total,
       cancelado: i.cancelado === 1,
       tipoPreco: i.tipo_preco,
-      precoTabela: i.preco_tabela ?? i.preco_unitario
+      precoTabela: i.preco_tabela ?? i.preco_unitario,
+      tabela: i.tabela_preco
     })
   )
   const pagamentos = db
@@ -181,36 +185,96 @@ function inserirItem(db: Banco, produto: Produto, quantidade: Milesimos, totalEt
       tabela.preco,
       tabela.tipo
     )
-    reprecificarAtacado(db, vendaId, produto)
+    reprecificarProduto(db, vendaId, produto)
     recalcular(db, vendaId)
     return obterVenda(db, vendaId)!
   })
 }
 
+/** Preço unitário de varejo já com atacarejo, e o mesmo na tabela "A prazo". */
+function precosDoItem(
+  produto: Produto,
+  precoTabelaItem: Centavos,
+  quantidadeTotal: Milesimos,
+  percentual: number
+): { varejo: Centavos; aPrazo: Centavos; atacado: boolean } {
+  const { preco, atacado } = precoComAtacado(produto, precoTabelaItem, quantidadeTotal)
+  return { varejo: preco, aPrazo: precoAPrazo(preco, produto.precoAPrazo, percentual), atacado }
+}
+
 /**
- * Atacarejo pela quantidade total do produto na venda (bipar 3 vezes = "3*código"):
- * passou do mínimo, todos os itens dele vão para o preço de atacado; caiu (item
- * cancelado), voltam ao preço de tabela. Itens de etiqueta de balança não mudam.
+ * Recalcula os itens do produto na venda. Atacarejo pela quantidade total do produto
+ * (bipar 3 vezes = "3*código"): passou do mínimo, todos vão para o preço de atacado; caiu
+ * (item cancelado), voltam ao preço de tabela. Em cima disso, item na tabela "A prazo"
+ * recebe o preço a prazo. Itens de etiqueta de balança não mudam.
  */
-function reprecificarAtacado(db: Banco, vendaId: number, produto: Produto): void {
-  if (produto.atacadoQuantidade === null || produto.atacadoPreco === null) return
+function reprecificarProduto(db: Banco, vendaId: number, produto: Produto): void {
   const itens = db
     .prepare(
-      `SELECT id, quantidade, preco_tabela, desconto FROM venda_itens
+      `SELECT id, quantidade, preco_tabela, desconto, tabela_preco FROM venda_itens
        WHERE venda_id = ? AND produto_id = ? AND cancelado = 0 AND tipo_preco <> 'etiqueta'`
     )
-    .all(vendaId, produto.id) as unknown as { id: number; quantidade: number; preco_tabela: number; desconto: number }[]
+    .all(vendaId, produto.id) as unknown as {
+    id: number
+    quantidade: number
+    preco_tabela: number
+    desconto: number
+    tabela_preco: TabelaPreco
+  }[]
   const total = itens.reduce((s, i) => s + i.quantidade, 0)
+  const { percentual } = obterConfigAPrazo(db)
   const atualizar = db.prepare(
     `UPDATE venda_itens SET preco_unitario = ?, total_bruto = ?, desconto = ?, total = ?, tipo_preco = ? WHERE id = ?`
   )
   for (const i of itens) {
-    const { preco, atacado } = precoComAtacado(produto, i.preco_tabela, total)
+    const p = precosDoItem(produto, i.preco_tabela, total, percentual)
+    const preco = i.tabela_preco === 'a_prazo' ? p.aPrazo : p.varejo
     const bruto = totalItem(preco, i.quantidade)
     const desconto = Math.min(i.desconto, bruto)
-    const tipo = atacado ? 'atacado' : i.preco_tabela < produto.precoVenda ? 'promocao' : 'normal'
+    const tipo = p.atacado ? 'atacado' : i.preco_tabela < produto.precoVenda ? 'promocao' : 'normal'
     atualizar.run(preco, bruto, desconto, bruto - desconto, tipo, i.id)
   }
+}
+
+/** Quantidade do produto em itens ativos da venda (base do atacarejo). */
+function quantidadeDoProduto(db: Banco, vendaId: number, produtoId: number): Milesimos {
+  const { q } = db
+    .prepare(
+      `SELECT COALESCE(SUM(quantidade), 0) AS q FROM venda_itens
+       WHERE venda_id = ? AND produto_id = ? AND cancelado = 0 AND tipo_preco <> 'etiqueta'`
+    )
+    .get(vendaId, produtoId) as { q: number }
+  return q
+}
+
+/**
+ * Preço unitário do item no varejo e a prazo, para a janela de escolha da tabela.
+ * null quando não há o que escolher: etiqueta de balança (vale o total impresso) ou
+ * preço a prazo igual ao de varejo (percentual 0 e sem preço fixo).
+ */
+export function opcoesTabelaItem(db: Banco, itemId: unknown): OpcoesTabela | null {
+  const item = itemDaVendaAberta(db, itemId)
+  if (item.tipo_preco === 'etiqueta') return null
+  const produto = obterProduto(db, item.produto_id)!
+  const total = quantidadeDoProduto(db, item.venda_id, produto.id)
+  const p = precosDoItem(produto, item.preco_tabela ?? item.preco_unitario, total, obterConfigAPrazo(db).percentual)
+  return p.aPrazo === p.varejo ? null : { varejo: p.varejo, aPrazo: p.aPrazo }
+}
+
+/** Troca a tabela de preço de um item da venda aberta e recalcula o item e a venda. */
+export function alterarTabelaItem(db: Banco, itemId: unknown, tabela: unknown): Venda {
+  return emTransacao(db, () => {
+    const item = itemDaVendaAberta(db, itemId)
+    if (!tabelaValida(tabela)) throw new ErroNegocio('Tabela de preço inválida')
+    if (item.tipo_preco === 'etiqueta' && tabela !== 'varejo') {
+      throw new ErroNegocio('Item de etiqueta de balança fica no preço impresso na etiqueta')
+    }
+    db.prepare('UPDATE venda_itens SET tabela_preco = ? WHERE id = ?').run(tabela, item.id)
+    const produto = obterProduto(db, item.produto_id)
+    if (produto) reprecificarProduto(db, item.venda_id, produto)
+    recalcular(db, item.venda_id)
+    return obterVenda(db, item.venda_id)!
+  })
 }
 
 /**
@@ -297,7 +361,7 @@ export function alterarQuantidade(db: Banco, itemId: unknown, quantidade: unknow
       bruto - desconto,
       item.id
     )
-    reprecificarAtacado(db, item.venda_id, produto)
+    reprecificarProduto(db, item.venda_id, produto)
     recalcular(db, item.venda_id)
     return obterVenda(db, item.venda_id)!
   })
@@ -321,7 +385,7 @@ export function cancelarItem(db: Banco, itemId: unknown): Venda {
     const item = itemDaVendaAberta(db, itemId)
     db.prepare(`UPDATE venda_itens SET cancelado = 1, cancelado_em = ${AGORA} WHERE id = ?`).run(item.id)
     const produto = obterProduto(db, item.produto_id)
-    if (produto) reprecificarAtacado(db, item.venda_id, produto)
+    if (produto) reprecificarProduto(db, item.venda_id, produto)
     recalcular(db, item.venda_id)
     return obterVenda(db, item.venda_id)!
   })

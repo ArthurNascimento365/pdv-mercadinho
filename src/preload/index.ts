@@ -43,6 +43,8 @@ const api: PdvApi = {
     adicionarCodigo: (codigo, quantidade) => invocar('vendas:adicionarCodigo', codigo, quantidade),
     adicionarProduto: (produtoId, quantidade) => invocar('vendas:adicionarProduto', produtoId, quantidade),
     alterarQuantidade: (itemId, quantidade) => invocar('vendas:alterarQuantidade', itemId, quantidade),
+    opcoesTabela: (itemId) => invocar('vendas:opcoesTabela', itemId),
+    alterarTabelaItem: (itemId, tabela) => invocar('vendas:alterarTabelaItem', itemId, tabela),
     descontoItem: (itemId, desconto) => invocar('vendas:descontoItem', itemId, desconto),
     descontoVenda: (desconto) => invocar('vendas:descontoVenda', desconto),
     cancelarItem: (itemId) => invocar('vendas:cancelarItem', itemId),
@@ -107,6 +109,10 @@ const api: PdvApi = {
     receber: (id, valor, forma) => invocar('fiado:receber', id, valor, forma),
     cobranca: (id) => invocar('fiado:cobranca', id),
     imprimirRecebimento: (lancamentoId) => invocar('fiado:imprimirRecebimento', lancamentoId)
+  },
+  precos: {
+    configAPrazo: () => invocar('precos:configAPrazo'),
+    salvarConfigAPrazo: (cfg) => invocar('precos:salvarConfigAPrazo', cfg)
   },
   pix: {
     obterConfig: () => invocar('pix:obterConfig'),

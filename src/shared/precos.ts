@@ -32,6 +32,45 @@ export function precoTabela(p: RegrasPreco, hoje: string): { preco: Centavos; ti
   return promocaoAtiva(p, hoje) ? { preco: p.precoPromocional!, tipo: 'promocao' } : { preco: p.precoVenda, tipo: 'normal' }
 }
 
+/** Tabela de preço do item na venda. É interna: o cupom mostra só o preço cobrado. */
+export type TabelaPreco = 'varejo' | 'a_prazo'
+
+export const TABELAS_PRECO: Record<TabelaPreco, string> = { varejo: 'Varejo', a_prazo: 'A prazo' }
+
+export function tabelaValida(t: unknown): t is TabelaPreco {
+  return t === 'varejo' || t === 'a_prazo'
+}
+
+/** Configuração da tabela "A prazo". `percentual` em centésimos de ponto: 800 = 8,00%. */
+export interface ConfigAPrazo {
+  percentual: number
+  /** Abrir a janela de escolha da tabela a cada item lançado. */
+  perguntar: boolean
+}
+
+export const CONFIG_A_PRAZO_PADRAO: ConfigAPrazo = { percentual: 0, perguntar: true }
+
+/**
+ * Preço unitário na tabela "A prazo": o preço fixo do produto, se houver; senão o preço que
+ * estiver valendo no varejo (normal, promoção ou atacado) mais o percentual, arredondado.
+ */
+export function precoAPrazo(base: Centavos, fixo: Centavos | null, percentual: number): Centavos {
+  return fixo ?? Math.round((base * (10_000 + percentual)) / 10_000)
+}
+
+/** Percentual para exibir: 800 → "8", 850 → "8,5". */
+export function percentualParaTexto(p: number): string {
+  return (p / 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+}
+
+/** Percentual digitado ("8", "8,5", "8.25") em centésimos de ponto; null se inválido. */
+export function lerPercentual(texto: string): number | null {
+  const m = /^(\d{1,3})(?:[,.](\d{1,2}))?$/.exec(texto.trim().replace(/%$/, ''))
+  if (!m) return null
+  const [, inteiro = '0', fracao = ''] = m
+  return Number(inteiro) * 100 + Number(fracao.padEnd(2, '0'))
+}
+
 /**
  * Preço com atacarejo: levando `quantidadeTotal` do produto na venda e passando do mínimo,
  * vale o menor entre o preço de tabela e o de atacado.

@@ -39,7 +39,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - Instalador `dist/PDV Mercadinho Setup 0.1.9.exe` gerado em 01/11/2026 (visual novo,
   descrição em maiúsculas, código interno, pagamento dividido, Enter para pagar e tela Vender
   pensada para o cliente).
-  Schema do banco na versão 7. 299 testes (29 arquivos).
+- **08/11 — tabela de preço "A prazo" por item** (interna, não sai no cupom): ainda sem instalador.
+  Schema do banco na versão 8. 308 testes (29 arquivos).
 
 ### Em andamento
 
@@ -245,6 +246,16 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   total do produto na venda (reprecifica todas as linhas, inclusive ao cancelar item). Etiqueta
   de balança mantém o total impresso. Mudança de preço/promoção/atacado atualiza
   `preco_alterado_em` (base das etiquetas de gôndola).
+- Tabela de preço (Varejo / A prazo): escolhida **por item** e totalmente interna — o cupom só
+  mostra o preço cobrado, sem citar tabela. Preço a prazo = `produtos.preco_a_prazo` (fixo,
+  maior que o de venda) ou, sem ele, preço de tabela + percentual de Configurações
+  (`tabela.a_prazo.percentual` em centésimos de %, `precoAPrazo` em shared/precos.ts). O item
+  guarda `venda_itens.tabela_preco`; `reprecificarProduto` respeita a tabela de cada linha
+  (atacarejo/promoção valem só no varejo). Com `tabela.a_prazo.perguntar` ligado, a janela
+  `EscolhaTabela` abre após cada item lançado que tenha preço a prazo diferente: Enter = Varejo,
+  F4 = A prazo, Esc fecha; dígito ou `*` confirma a tabela atual e vai para o campo de código
+  (o leitor nunca perde um bipe). F4 na tela Vender troca a tabela do item selecionado; a lista
+  mostra a etiqueta "AP". Etiqueta de balança não tem preço a prazo. CSV aceita `preco_a_prazo`.
 - Importação CSV não sobrescreve estoque de produto existente; estoque muda por entrada
   de mercadoria/ajuste (Fase 3). `preco_alterado_em` alimenta as etiquetas de gôndola (Fase 5).
 - Toda regra de negócio nova ganha teste com banco `:memory:`.
