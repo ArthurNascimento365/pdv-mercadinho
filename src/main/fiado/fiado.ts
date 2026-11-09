@@ -100,8 +100,15 @@ export function buscarClientes(db: Banco, termo: string, { incluirInativos = fal
   const condicoes = incluirInativos ? [] : ['ativo = 1']
   const params: string[] = []
   for (const p of palavras) {
-    condicoes.push(`(nome_busca LIKE ? OR telefone LIKE ?)`)
-    params.push(`%${p}%`, `%${p.replace(/\D/g, '') || '\u0000'}%`)
+    // Telefone só entra quando a palavra tem dígitos (senão '%%' casaria todo cliente com telefone).
+    const digitos = p.replace(/\D/g, '')
+    if (digitos) {
+      condicoes.push(`(nome_busca LIKE ? OR telefone LIKE ?)`)
+      params.push(`%${p}%`, `%${digitos}%`)
+    } else {
+      condicoes.push(`nome_busca LIKE ?`)
+      params.push(`%${p}%`)
+    }
   }
   const onde = condicoes.length ? `WHERE ${condicoes.join(' AND ')}` : ''
   const linhas = db
