@@ -800,6 +800,9 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
             // Cupom e gaveta depois: falha de hardware não desfaz a venda, só avisa.
             void window.pdv.hardware.aposVenda(v.id).then((r) => {
               if (r.erro) falhar(`Venda finalizada, mas o cupom/gaveta falhou: ${r.erro}. F12 tenta imprimir de novo.`)
+              else if (r.semCupomCliente) {
+                setAviso({ erro: false, texto: `Cupom não impresso: ${r.semCupomCliente} está marcado para não imprimir. F12 imprime.` })
+              }
             })
           }}
           onFechar={() => setModal(null)}

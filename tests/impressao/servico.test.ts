@@ -196,6 +196,24 @@ describe('serviço de impressão', () => {
     })
   })
 
+  it('cliente marcado para não imprimir: nada sai sozinho, a gaveta abre e o F12 imprime', async () => {
+    configurar({ modo: 'windows', nome: 'x', imprimirAutomatico: true })
+    const clienteId = criarCliente(db, { nome: 'Zé', telefone: null, limite: 10_000, imprimirCupom: false }).id
+    adicionarProduto(db, produtoId, 3000) // 22,47
+    definirClienteVenda(db, clienteId)
+    adicionarPagamento(db, 'fiado', 1000)
+    adicionarPagamento(db, 'dinheiro', 1247)
+    const v = finalizarVenda(db)
+    const t = transportesFalsos()
+    const s = new ServicoImpressao(db, t)
+    expect(await s.aposVenda(v.id)).toEqual({ impresso: false, gaveta: true, erro: null, semCupomCliente: 'Zé' })
+    expect(t.envios).toHaveLength(1)
+    expect(texto(t.envios[0]!.bytes!)).not.toContain('CUPOM N')
+    expect(texto(t.envios[0]!.bytes!)).not.toContain('COMPRA NO FIADO')
+    await s.imprimirVenda(v.id)
+    expect(texto(t.envios[1]!.bytes!)).toContain('CUPOM N')
+  })
+
   it('venda no fiado sai com a via de assinatura, mesmo sem impressão automática', async () => {
     configurar({ modo: 'windows', nome: 'x', imprimirAutomatico: false })
     const clienteId = criarCliente(db, { nome: 'João da Silva', telefone: null, limite: 10_000 }).id

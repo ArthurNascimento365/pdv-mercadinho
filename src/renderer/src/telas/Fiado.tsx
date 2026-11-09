@@ -248,7 +248,9 @@ function Extrato({
           <div className="cartao">
             <span>Telefone</span>
             <strong>{telefone(cliente.telefone) || '—'}</strong>
-            <small>{cliente.observacao ?? ''}</small>
+            <small>
+              {[cliente.imprimirCupom ? '' : 'não imprime cupom', cliente.observacao ?? ''].filter(Boolean).join(' · ')}
+            </small>
           </div>
         </div>
 

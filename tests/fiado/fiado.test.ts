@@ -3,6 +3,7 @@ import { linkWhatsApp } from '@shared/fiado'
 import { abrirCaixa, caixaAberto, fecharCaixa } from '../../src/main/caixa/caixa'
 import { abrirBanco, type Banco } from '../../src/main/db/conexao'
 import {
+  atualizarCliente,
   cobrancaCliente,
   comprasEmAberto,
   criarCliente,
@@ -57,6 +58,14 @@ describe('fiado', () => {
     expect(() => criarCliente(db, { nome: 'Zé', telefone: '1234', limite: 0 })).toThrow(/DDD/)
     expect(() => criarCliente(db, { nome: 'Zé', telefone: null, limite: -1 })).toThrow(/Limite/)
     expect(obterCliente(db, clienteId)).toMatchObject({ telefone: '11987654321', saldo: 0, diasEmAberto: null })
+  })
+
+  it('opção de imprimir cupom: liga por padrão, grava ao criar e ao editar', () => {
+    expect(obterCliente(db, clienteId)!.imprimirCupom).toBe(true)
+    const zé = criarCliente(db, { nome: 'Zé', telefone: null, limite: 0, imprimirCupom: false })
+    expect(zé.imprimirCupom).toBe(false)
+    expect(atualizarCliente(db, zé.id, { nome: 'Zé', telefone: null, limite: 0, imprimirCupom: true }).imprimirCupom).toBe(true)
+    expect(() => criarCliente(db, { nome: 'Zé', telefone: null, limite: 0, imprimirCupom: 'nao' })).toThrow(/imprimir cupom/)
   })
 
   it('fiado exige cliente na venda', () => {

@@ -8,6 +8,8 @@ export interface ClienteEntrada {
   limite: Centavos
   diaAcerto: number | null
   observacao: string | null
+  /** false = venda com este cliente não imprime sozinha (cupom nem via do fiado); F12 imprime. */
+  imprimirCupom: boolean
 }
 
 export interface Cliente extends ClienteEntrada {

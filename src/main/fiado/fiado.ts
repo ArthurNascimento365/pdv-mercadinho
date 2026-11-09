@@ -27,6 +27,7 @@ interface LinhaCliente {
   limite: number
   dia_acerto: number | null
   observacao: string | null
+  imprimir_cupom: number
   ativo: number
   criado_em: string
 }
@@ -81,6 +82,7 @@ function paraCliente(l: LinhaCliente, lancamentos: LinhaLancamento[], agora = Da
     limite: l.limite,
     diaAcerto: l.dia_acerto,
     observacao: l.observacao,
+    imprimirCupom: l.imprimir_cupom === 1,
     ativo: l.ativo === 1,
     saldo,
     diasEmAberto: maisAntiga ? Math.floor((agora - new Date(maisAntiga).getTime()) / DIA_MS) : null,
@@ -132,16 +134,20 @@ export function validarCliente(dado: unknown): ClienteEntrada {
     diaAcerto = dia
   }
   const obs = typeof d['observacao'] === 'string' ? limparEspacos(d['observacao']).slice(0, 300) : ''
-  return { nome, telefone, limite, diaAcerto, observacao: obs || null }
+  // Ausente = imprime (padrão de todo cliente).
+  const imprimir = d['imprimirCupom']
+  if (imprimir !== undefined && typeof imprimir !== 'boolean') throw new ErroNegocio('Opção de imprimir cupom inválida')
+  return { nome, telefone, limite, diaAcerto, observacao: obs || null, imprimirCupom: imprimir !== false }
 }
 
 export function criarCliente(db: Banco, dado: unknown): Cliente {
   const c = validarCliente(dado)
   const r = db
     .prepare(
-      `INSERT INTO clientes (nome, nome_busca, telefone, limite, dia_acerto, observacao) VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO clientes (nome, nome_busca, telefone, limite, dia_acerto, observacao, imprimir_cupom)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(c.nome, normalizarBusca(c.nome), c.telefone, c.limite, c.diaAcerto, c.observacao)
+    .run(c.nome, normalizarBusca(c.nome), c.telefone, c.limite, c.diaAcerto, c.observacao, c.imprimirCupom ? 1 : 0)
   return obterCliente(db, Number(r.lastInsertRowid))!
 }
 
@@ -150,10 +156,11 @@ export function atualizarCliente(db: Banco, id: unknown, dado: unknown): Cliente
   const c = validarCliente(dado)
   const r = db
     .prepare(
-      `UPDATE clientes SET nome = ?, nome_busca = ?, telefone = ?, limite = ?, dia_acerto = ?, observacao = ?
+      `UPDATE clientes SET nome = ?, nome_busca = ?, telefone = ?, limite = ?, dia_acerto = ?, observacao = ?,
+         imprimir_cupom = ?
        WHERE id = ?`
     )
-    .run(c.nome, normalizarBusca(c.nome), c.telefone, c.limite, c.diaAcerto, c.observacao, clienteId)
+    .run(c.nome, normalizarBusca(c.nome), c.telefone, c.limite, c.diaAcerto, c.observacao, c.imprimirCupom ? 1 : 0, clienteId)
   if (r.changes === 0) throw new ErroNegocio('Cliente não encontrado')
   return obterCliente(db, clienteId)!
 }

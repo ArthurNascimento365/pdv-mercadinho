@@ -101,4 +101,6 @@ export interface ResultadoHardware {
   impresso: boolean
   gaveta: boolean
   erro: string | null
+  /** Nome do cliente marcado para não imprimir cupom (a venda saiu sem papel por isso). */
+  semCupomCliente?: string
 }

@@ -189,18 +189,21 @@ export class ServicoImpressao {
     try {
       const venda = obterVenda(this.db, exigirId(vendaId))
       if (!venda || venda.status !== 'finalizada') throw new ErroNegocio('Venda não finalizada')
-      const imprimir = cfg.modo !== 'nenhuma' && cfg.imprimirAutomatico
+      // Cliente marcado para não imprimir: nada sai sozinho (cupom nem via do fiado); F12 imprime.
+      const cliente = venda.clienteId !== null ? obterCliente(this.db, venda.clienteId) : null
+      const semCupomCliente = cliente && !cliente.imprimirCupom ? cliente.nome : undefined
+      const imprimir = cfg.modo !== 'nenhuma' && cfg.imprimirAutomatico && !semCupomCliente
       const gaveta =
         cfg.gaveta !== 'nao' &&
         cfg.modo !== 'nenhuma' &&
         cfg.modo !== 'driver' &&
         venda.pagamentos.some((p) => p.forma === 'dinheiro')
       // A via do fiado sai sempre que houver impressora: é a prova da dívida.
-      const fiado = cfg.modo !== 'nenhuma' ? this.comprovanteFiado(venda.id) : null
+      const fiado = cfg.modo !== 'nenhuma' && !semCupomCliente ? this.comprovanteFiado(venda.id) : null
       const documentos = [...(imprimir ? [this.documentoVenda(venda.id)] : []), ...(fiado ? [fiado] : [])]
-      if (documentos.length === 0 && !gaveta) return { impresso: false, gaveta: false, erro: null }
+      if (documentos.length === 0 && !gaveta) return { impresso: false, gaveta: false, erro: null, semCupomCliente }
       await this.enviar(documentos, { gaveta })
-      return { impresso: documentos.length > 0, gaveta, erro: null }
+      return { impresso: documentos.length > 0, gaveta, erro: null, semCupomCliente }
     } catch (erro) {
       return { impresso: false, gaveta: false, erro: erro instanceof Error ? erro.message : String(erro) }
     }

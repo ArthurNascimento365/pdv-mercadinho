@@ -27,6 +27,7 @@ export function FormCliente({
   const [limite, setLimite] = useState(cliente ? centavosParaTexto(cliente.limite) : '100,00')
   const [dia, setDia] = useState(cliente?.diaAcerto ? String(cliente.diaAcerto) : '')
   const [obs, setObs] = useState(cliente?.observacao ?? '')
+  const [imprimirCupom, setImprimirCupom] = useState(cliente?.imprimirCupom ?? true)
   const [erro, setErro] = useState<string | null>(null)
   const refNome = useRef<HTMLInputElement>(null)
 
@@ -38,7 +39,7 @@ export function FormCliente({
     if (valorLimite === null || valorLimite < 0) return setErro('Limite inválido')
     const diaAcerto = dia.trim() === '' ? null : Number(dia)
     try {
-      const entrada = { nome, telefone: telefone.trim() || null, limite: valorLimite, diaAcerto, observacao: obs.trim() || null }
+      const entrada = { nome, telefone: telefone.trim() || null, limite: valorLimite, diaAcerto, observacao: obs.trim() || null, imprimirCupom }
       onFechar(cliente ? await window.pdv.fiado.atualizar(cliente.id, entrada) : await window.pdv.fiado.criar(entrada))
     } catch (e) {
       setErro(mensagemErro(e))
@@ -73,6 +74,13 @@ export function FormCliente({
             Observação
             <input value={obs} maxLength={300} onChange={(e) => setObs(e.target.value)} />
           </label>
+          <label className="opcao largo">
+            <input type="checkbox" checked={imprimirCupom} onChange={(e) => setImprimirCupom(e.target.checked)} />
+            Imprimir cupom nas vendas deste cliente
+          </label>
+          <small className="largo dica">
+            Desmarcado: a venda com este cliente não imprime nada (cupom nem via do fiado). F12 imprime se precisar.
+          </small>
         </div>
         {erro && <p className="erro">{erro}</p>}
         <div className="acoes">
