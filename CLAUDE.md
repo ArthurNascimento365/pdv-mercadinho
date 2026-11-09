@@ -58,7 +58,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   venda com ele não imprime sozinha; gaveta e F12 seguem) — no instalador `dist/PDV Mercadinho Setup 0.1.15.exe` (08/11/2026). Schema do banco na
   versão 11.
 - **08/11 — via do fiado e recibo de pagamento saem sempre** (a opção do cliente só tira o cupom) e
-  **busca de cliente corrigida** (por nome trazia todo cliente com telefone). Ainda sem instalador.
+  **busca de cliente corrigida** (por nome trazia todo cliente com telefone) — no instalador `dist/PDV Mercadinho Setup 0.1.16.exe`
+  (08/11/2026).
   325 testes (29 arquivos).
 
 ### Em andamento
@@ -112,7 +113,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.16.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.17.
 4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
