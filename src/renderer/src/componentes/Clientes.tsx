@@ -79,7 +79,8 @@ export function FormCliente({
             Imprimir cupom nas vendas deste cliente
           </label>
           <small className="largo dica">
-            Desmarcado: a venda com este cliente não imprime nada (cupom nem via do fiado). F12 imprime se precisar.
+            Desmarcado: a venda com este cliente não imprime o cupom (F12 imprime se precisar). A via do fiado
+            para assinatura e o recibo de pagamento saem sempre.
           </small>
         </div>
         {erro && <p className="erro">{erro}</p>}

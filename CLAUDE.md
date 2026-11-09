@@ -56,7 +56,10 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   instalador `dist/PDV Mercadinho Setup 0.1.14.exe` (08/11/2026).
 - **08/11 — cliente do fiado com opção "Imprimir cupom nas vendas deste cliente"** (desmarcado = a
   venda com ele não imprime sozinha; gaveta e F12 seguem) — no instalador `dist/PDV Mercadinho Setup 0.1.15.exe` (08/11/2026). Schema do banco na
-  versão 11. 323 testes (29 arquivos).
+  versão 11.
+- **08/11 — via do fiado e recibo de pagamento saem sempre** (a opção do cliente só tira o cupom) e
+  **busca de cliente corrigida** (por nome trazia todo cliente com telefone). Ainda sem instalador.
+  325 testes (29 arquivos).
 
 ### Em andamento
 
@@ -264,8 +267,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   guarda antes um "antes-de-restaurar" e reinicia o app.
 - Fiado: forma de pagamento "fiado" exige cliente na venda (F3); limite 0 = só com gerente.
   Cliente com `imprimir_cupom = 0` (migração 11; checkbox no FormCliente, ligado por padrão): em
-  `aposVenda` não sai nada sozinho para venda com ele (nem cupom nem via do fiado), a gaveta abre
-  igual, o resultado traz `semCupomCliente` e a tela Vender avisa; F12/Consultar vendas imprimem.
+  `aposVenda` o cupom não sai sozinho para venda com ele; a **via do fiado (assinatura) e o recibo de
+  pagamento da dívida saem sempre** (pedido do usuário). A gaveta abre igual, o resultado traz
+  `semCupomCliente` e a tela Vender avisa; F12/Consultar vendas imprimem o cupom.
   Bloqueio (limite/atraso > `fiado.dias_atraso`) vem como `ErroNegocio(..., 'gerente')`; o IPC
   manda o erro com prefixo `[gerente] ` e o renderer usa `exigeGerente(e)` para pedir a senha.
   Fiado não entra na contagem do fechamento (`FORMAS_CONTAVEIS`); pagamento de fiado entra no

@@ -12,7 +12,7 @@ import {
 import type { Transportes } from '../../src/main/impressao/transportes'
 import { definirConfig } from '../../src/main/repos/configuracoes'
 import { criarProduto } from '../../src/main/repos/produtos'
-import { criarCliente } from '../../src/main/fiado/fiado'
+import { criarCliente, receberFiado } from '../../src/main/fiado/fiado'
 import { definirConfigAPrazo } from '../../src/main/repos/configuracoes'
 import {
   acrescimoVenda,
@@ -196,7 +196,7 @@ describe('serviço de impressão', () => {
     })
   })
 
-  it('cliente marcado para não imprimir: nada sai sozinho, a gaveta abre e o F12 imprime', async () => {
+  it('cliente marcado para não imprimir: o cupom não sai, a via do fiado sai sempre, a gaveta abre e o F12 imprime', async () => {
     configurar({ modo: 'windows', nome: 'x', imprimirAutomatico: true })
     const clienteId = criarCliente(db, { nome: 'Zé', telefone: null, limite: 10_000, imprimirCupom: false }).id
     adicionarProduto(db, produtoId, 3000) // 22,47
@@ -206,12 +206,28 @@ describe('serviço de impressão', () => {
     const v = finalizarVenda(db)
     const t = transportesFalsos()
     const s = new ServicoImpressao(db, t)
-    expect(await s.aposVenda(v.id)).toEqual({ impresso: false, gaveta: true, erro: null, semCupomCliente: 'Zé' })
+    expect(await s.aposVenda(v.id)).toEqual({ impresso: true, gaveta: true, erro: null, semCupomCliente: 'Zé' })
     expect(t.envios).toHaveLength(1)
     expect(texto(t.envios[0]!.bytes!)).not.toContain('CUPOM N')
-    expect(texto(t.envios[0]!.bytes!)).not.toContain('COMPRA NO FIADO')
+    expect(texto(t.envios[0]!.bytes!)).toContain('COMPRA NO FIADO')
+    expect(temGaveta(t.envios[0]!.bytes!)).toBe(true)
     await s.imprimirVenda(v.id)
     expect(texto(t.envios[1]!.bytes!)).toContain('CUPOM N')
+  })
+
+  it('recibo de pagamento do fiado sai mesmo para cliente marcado para não imprimir cupom', async () => {
+    configurar({ modo: 'windows', nome: 'x', imprimirAutomatico: false })
+    const clienteId = criarCliente(db, { nome: 'Zé', telefone: null, limite: 10_000, imprimirCupom: false }).id
+    adicionarProduto(db, produtoId, 3000) // 22,47
+    definirClienteVenda(db, clienteId)
+    adicionarPagamento(db, 'fiado', 2247)
+    finalizarVenda(db)
+    const { lancamentoId } = receberFiado(db, clienteId, 1000, 'dinheiro')
+    const t = transportesFalsos()
+    await new ServicoImpressao(db, t).imprimirRecebimentoFiado(lancamentoId)
+    const s = texto(t.envios[0]!.bytes!)
+    expect(s).toContain('RECIBO DE PAGAMENTO')
+    expect(temGaveta(t.envios[0]!.bytes!)).toBe(true)
   })
 
   it('venda no fiado sai com a via de assinatura, mesmo sem impressão automática', async () => {

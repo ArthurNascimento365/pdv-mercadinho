@@ -4,6 +4,7 @@ import { abrirCaixa, caixaAberto, fecharCaixa } from '../../src/main/caixa/caixa
 import { abrirBanco, type Banco } from '../../src/main/db/conexao'
 import {
   atualizarCliente,
+  buscarClientes,
   cobrancaCliente,
   comprasEmAberto,
   criarCliente,
@@ -66,6 +67,14 @@ describe('fiado', () => {
     expect(zé.imprimirCupom).toBe(false)
     expect(atualizarCliente(db, zé.id, { nome: 'Zé', telefone: null, limite: 0, imprimirCupom: true }).imprimirCupom).toBe(true)
     expect(() => criarCliente(db, { nome: 'Zé', telefone: null, limite: 0, imprimirCupom: 'nao' })).toThrow(/imprimir cupom/)
+  })
+
+  it('busca por nome não traz quem só tem telefone; por número acha o telefone', () => {
+    criarCliente(db, { nome: 'Pedro Alves', telefone: null, limite: 0 })
+    expect(buscarClientes(db, 'pedro').map((c) => c.nome)).toEqual(['Pedro Alves'])
+    expect(buscarClientes(db, 'joão')).toEqual([])
+    expect(buscarClientes(db, '98765').map((c) => c.nome)).toEqual(['Dona Maria das Graças'])
+    expect(buscarClientes(db, 'maria graças').map((c) => c.nome)).toEqual(['Dona Maria das Graças'])
   })
 
   it('fiado exige cliente na venda', () => {
