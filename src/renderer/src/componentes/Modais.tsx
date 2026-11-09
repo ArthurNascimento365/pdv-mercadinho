@@ -79,6 +79,12 @@ function lerDescontoDoTipo(tipo: TipoDesconto, texto: string, base: Centavos): C
   return lerDesconto(`${limpo.replace(/%$/, '')}%`, base)
 }
 
+interface AjusteVendaProps {
+  /** Devolve a mensagem de erro, ou null se deu certo (quem chamou fecha o modal). */
+  confirmar: (valor: Centavos) => Promise<string | null>
+  onFechar: () => void
+}
+
 /**
  * Desconto na venda: o operador escolhe porcentagem (F1) ou valor em reais (F2)
  * e vê o total com desconto antes de confirmar.
@@ -86,17 +92,34 @@ function lerDescontoDoTipo(tipo: TipoDesconto, texto: string, base: Centavos): C
 export function DescontoVenda({
   subtotal,
   descontoAtual,
+  ...resto
+}: AjusteVendaProps & { subtotal: Centavos; descontoAtual: Centavos }): React.JSX.Element {
+  return <AjusteVenda modo="desconto" base={subtotal} atual={descontoAtual} {...resto} />
+}
+
+/**
+ * Acréscimo na venda: mesma janela do desconto, somando. A porcentagem vale sobre o total
+ * sem acréscimo (subtotal − desconto da venda).
+ */
+export function AcrescimoVenda({
+  base,
+  acrescimoAtual,
+  ...resto
+}: AjusteVendaProps & { base: Centavos; acrescimoAtual: Centavos }): React.JSX.Element {
+  return <AjusteVenda modo="acrescimo" base={base} atual={acrescimoAtual} {...resto} />
+}
+
+function AjusteVenda({
+  modo,
+  base,
+  atual,
   confirmar,
   onFechar
-}: {
-  subtotal: Centavos
-  descontoAtual: Centavos
-  /** Devolve a mensagem de erro, ou null se deu certo (quem chamou fecha o modal). */
-  confirmar: (desconto: Centavos) => Promise<string | null>
-  onFechar: () => void
-}): React.JSX.Element {
-  const [tipo, setTipo] = useState<TipoDesconto>(descontoAtual > 0 ? 'valor' : 'porcentagem')
-  const [texto, setTexto] = useState(descontoAtual > 0 ? centavosParaTexto(descontoAtual) : '')
+}: AjusteVendaProps & { modo: 'desconto' | 'acrescimo'; base: Centavos; atual: Centavos }): React.JSX.Element {
+  const desconto = modo === 'desconto'
+  const nome = desconto ? 'desconto' : 'acréscimo'
+  const [tipo, setTipo] = useState<TipoDesconto>(atual > 0 ? 'valor' : 'porcentagem')
+  const [texto, setTexto] = useState(atual > 0 ? centavosParaTexto(atual) : '')
   const [erro, setErro] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const campo = useRef<HTMLInputElement>(null)
@@ -106,8 +129,9 @@ export function DescontoVenda({
     campo.current?.select()
   }, [tipo])
 
-  const desconto = lerDescontoDoTipo(tipo, texto, subtotal)
-  const valido = desconto !== null && desconto <= subtotal
+  const valor = lerDescontoDoTipo(tipo, texto, base)
+  const valido = valor !== null && (!desconto || valor <= base)
+  const total = valor === null ? 0 : desconto ? base - valor : base + valor
 
   function escolher(novo: TipoDesconto): void {
     if (novo === tipo) return
@@ -118,17 +142,17 @@ export function DescontoVenda({
 
   async function enviar(): Promise<void> {
     if (ocupado) return
-    if (desconto === null) {
+    if (valor === null) {
       setErro(tipo === 'porcentagem' ? 'Porcentagem inválida: de 0 a 100 (ex.: 10 ou 7,5)' : 'Valor inválido (ex.: 5,00)')
       return
     }
-    if (desconto > subtotal) {
-      setErro(`Desconto maior que a venda (${formatarMoeda(subtotal)})`)
+    if (desconto && valor > base) {
+      setErro(`Desconto maior que a venda (${formatarMoeda(base)})`)
       return
     }
     setOcupado(true)
     try {
-      const problema = await confirmar(desconto)
+      const problema = await confirmar(valor)
       if (problema) setErro(problema)
     } catch (e) {
       setErro(mensagemErro(e))
@@ -147,8 +171,10 @@ export function DescontoVenda({
   return (
     <div className="fundo-modal">
       <div className="modal modal-pequeno">
-        <h2>Desconto na venda</h2>
-        <p>Subtotal {formatarMoeda(subtotal)}</p>
+        <h2>{desconto ? 'Desconto na venda' : 'Acréscimo na venda'}</h2>
+        <p>
+          {desconto ? 'Subtotal' : 'Total sem acréscimo'} {formatarMoeda(base)}
+        </p>
         <div className="tipo-desconto">
           <button
             className={tipo === 'porcentagem' ? 'primario' : undefined}
@@ -166,7 +192,7 @@ export function DescontoVenda({
           </button>
         </div>
         <label>
-          {tipo === 'porcentagem' ? 'Porcentagem de desconto' : 'Valor do desconto em reais'}
+          {tipo === 'porcentagem' ? `Porcentagem de ${nome}` : `Valor do ${nome} em reais`}
           <div className="campo-unidade">
             {tipo === 'valor' && <span>R$</span>}
             <input
@@ -184,14 +210,14 @@ export function DescontoVenda({
           </div>
         </label>
         <div className="linha-total">
-          <span>Desconto</span>
-          <span>{valido ? `-${formatarMoeda(desconto)}` : '—'}</span>
+          <span>{desconto ? 'Desconto' : 'Acréscimo'}</span>
+          <span>{valido ? `${desconto ? '-' : '+'}${formatarMoeda(valor)}` : '—'}</span>
         </div>
         <div className="linha-total">
-          <strong>Total com desconto</strong>
-          <strong>{valido ? formatarMoeda(subtotal - desconto) : '—'}</strong>
+          <strong>Total com {nome}</strong>
+          <strong>{valido ? formatarMoeda(total) : '—'}</strong>
         </div>
-        <p className="dica">Vazio ou 0 tira o desconto.</p>
+        <p className="dica">Vazio ou 0 tira o {nome}.</p>
         {erro && <p className="erro">{erro}</p>}
         <div className="acoes">
           <span className="espaco" />

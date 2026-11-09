@@ -51,6 +51,7 @@ async function montar(aba: Aba, periodo: Periodo, numero: number | null): Promis
           { rotulo: 'Faturamento', valor: real(v.faturamento) },
           { rotulo: 'Ticket médio', valor: real(v.ticketMedio) },
           { rotulo: 'Descontos', valor: real(v.descontos) },
+          ...(v.acrescimos > 0 ? [{ rotulo: 'Acréscimos', valor: real(v.acrescimos) }] : []),
           { rotulo: 'Canceladas', valor: String(v.canceladas), alerta: v.canceladas > 0 },
           ...v.porForma.map((f) => ({ rotulo: FORMAS_PAGAMENTO[f.forma], valor: real(f.valor) })),
           ...(v.saldoDevedor > 0 ? [{ rotulo: 'Saldo devedor (em aberto)', valor: real(v.saldoDevedor), alerta: true }] : [])

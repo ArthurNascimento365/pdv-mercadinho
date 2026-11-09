@@ -13,6 +13,8 @@ export interface RelatorioVendas {
   canceladas: number
   faturamento: Centavos
   descontos: Centavos
+  /** Acréscimos lançados no total das vendas. */
+  acrescimos: Centavos
   ticketMedio: Centavos
   porDia: { dia: string; quantidade: number; total: Centavos }[]
   /** Dinheiro já sem o troco. */

@@ -15,10 +15,12 @@ import { criarProduto } from '../../src/main/repos/produtos'
 import { criarCliente } from '../../src/main/fiado/fiado'
 import { definirConfigAPrazo } from '../../src/main/repos/configuracoes'
 import {
+  acrescimoVenda,
   adicionarPagamento,
   adicionarProduto,
   alterarTabelaItem,
   definirClienteVenda,
+  descontoVenda,
   finalizarVenda
 } from '../../src/main/vendas/vendas'
 import { entrada } from '../ajuda'
@@ -126,6 +128,20 @@ describe('serviço de impressão', () => {
       expect(l.find((x) => x.startsWith('Total recebido'))).toMatch(/20,00$/)
       expect(l.find((x) => x.startsWith('SALDO DEVEDOR'))).toMatch(/R\$\s2,47$/)
       expect(l.some((x) => x.startsWith('Troco'))).toBe(false)
+    })
+
+    it('cupom com acréscimo mostra subtotal, desconto e acréscimo antes do total', () => {
+      adicionarProduto(db, produtoId, 3000) // 22,47
+      descontoVenda(db, 47)
+      acrescimoVenda(db, 250)
+      adicionarPagamento(db, 'pix', 2450)
+      const v = finalizarVenda(db)
+      const l = new ServicoImpressao(db, transportesFalsos()).previa('venda', v.id).linhas.map((x) => x.texto)
+      const i = l.findIndex((x) => x.startsWith('Subtotal'))
+      expect(l[i]).toMatch(/22,47$/)
+      expect(l[i + 1]).toMatch(/^Desconto.*-0,47$/)
+      expect(l[i + 2]).toMatch(/^Acréscimo.*2,50$/)
+      expect(l[i + 3]).toMatch(/^TOTAL.*24,50$/)
     })
 
     it('cartão sai por extenso no cupom', () => {

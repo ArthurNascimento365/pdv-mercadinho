@@ -13,7 +13,7 @@ import {
 import type { Diagramado } from '@shared/impressao'
 import { BuscaCliente } from '../componentes/Clientes'
 import { Icone } from '../componentes/Icone'
-import { BuscaProduto, Confirmar, DescontoVenda, EscolhaTabela, Prompt } from '../componentes/Modais'
+import { AcrescimoVenda, BuscaProduto, Confirmar, DescontoVenda, EscolhaTabela, Prompt } from '../componentes/Modais'
 import { PesoBalanca } from '../componentes/PesoBalanca'
 import { PreviaCupom } from '../componentes/PreviaCupom'
 import { bipeErro, mensagemErro, useTeclas } from '../util'
@@ -24,6 +24,7 @@ type Modal =
   | { tipo: 'peso'; produto: Produto }
   | { tipo: 'descontoItem'; item: ItemVenda }
   | { tipo: 'descontoVenda' }
+  | { tipo: 'acrescimoVenda' }
   | { tipo: 'cancelarItem'; item: ItemVenda }
   | { tipo: 'cancelarVenda' }
   | { tipo: 'cancelarUltima'; venda: Venda }
@@ -38,7 +39,7 @@ const qtd = (q: number, unidade: 'UN' | 'KG'): string =>
 /**
  * Barra de ações do caixa, agrupada pelo que a ação afeta. Cada botão também tem a tecla
  * de atalho; o pagamento (Enter com o campo vazio, ou F10) fica no painel do total e Esc no
- * cabeçalho.
+ * cabeçalho. A tabela do item (F4) não tem botão: a janela abre sozinha a cada item novo.
  */
 const GRUPOS: { nome: string; botoes: { tecla: string; rotulo: string; perigo?: boolean }[] }[] = [
   {
@@ -46,7 +47,6 @@ const GRUPOS: { nome: string; botoes: { tecla: string; rotulo: string; perigo?: 
     botoes: [
       { tecla: 'F2', rotulo: 'Buscar produto' },
       { tecla: 'F5', rotulo: 'Desconto no item' },
-      { tecla: 'F4', rotulo: 'Tabela do item' },
       { tecla: 'F7', rotulo: 'Cancelar item', perigo: true }
     ]
   },
@@ -55,6 +55,7 @@ const GRUPOS: { nome: string; botoes: { tecla: string; rotulo: string; perigo?: 
     botoes: [
       { tecla: 'F3', rotulo: 'Cliente (fiado)' },
       { tecla: 'F6', rotulo: 'Desconto na venda' },
+      { tecla: 'F1', rotulo: 'Acréscimo pendente' },
       { tecla: 'F8', rotulo: 'Cancelar venda', perigo: true }
     ]
   },
@@ -158,9 +159,10 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   const item = itens[selecionado] ?? null
   // Para o cliente: o item que acabou de passar (ou o que acabou de sair, por alguns segundos).
   const destaque = recemCancelado ?? ativos.find((i) => i.id === ultimoId) ?? ativos.at(-1) ?? null
-  // Subtotal antes de qualquer desconto; a diferença para o total é o que o cliente economizou.
+  // Subtotal antes de qualquer desconto; descontos dos itens + o da venda = o que o cliente economizou.
   const bruto = ativos.reduce((s, i) => s + i.totalBruto, 0)
-  const economia = Math.max(0, bruto - (venda?.total ?? 0))
+  const economia = venda ? Math.max(0, bruto - venda.subtotal + venda.desconto) : 0
+  const acrescimo = venda?.acrescimo ?? 0
 
   // Perguntar a tabela a cada item (Configurações → tabela de preço). Ref: lido dentro de callbacks.
   const perguntarTabela = useRef(true)
@@ -351,6 +353,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
       if (exigirItem()) setModal({ tipo: 'descontoItem', item: item! })
     },
     F6: () => (temItens ? setModal({ tipo: 'descontoVenda' }) : falhar('Venda sem itens')),
+    F1: () => (temItens ? setModal({ tipo: 'acrescimoVenda' }) : falhar('Venda sem itens')),
     F7: () => {
       if (exigirItem()) setModal({ tipo: 'cancelarItem', item: item! })
     },
@@ -415,7 +418,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
 
       <nav className="caixa-acoes">
         {GRUPOS.map((g) => (
-          <div key={g.nome} className="caixa-grupo">
+          <div key={g.nome} className={`caixa-grupo caixa-grupo-${g.nome.toLowerCase()}`}>
             <span className="caixa-grupo-nome">{g.nome}</span>
             {g.botoes.map((b) => (
               <button
@@ -597,6 +600,12 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
                   <b>−{formatarMoeda(economia)}</b>
                 </div>
               )}
+              {acrescimo > 0 && (
+                <div className="linha-total caixa-acrescimo">
+                  <span>Acréscimo</span>
+                  <b>+{formatarMoeda(acrescimo)}</b>
+                </div>
+              )}
             </div>
             <div className="caixa-total">
               <span>Total a pagar</span>
@@ -707,6 +716,19 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
           descontoAtual={venda.desconto}
           confirmar={async (d) => {
             atualizar(await window.pdv.vendas.descontoVenda(d), false)
+            setModal(null)
+            return null
+          }}
+          onFechar={() => setModal(null)}
+        />
+      )}
+
+      {modal?.tipo === 'acrescimoVenda' && venda && (
+        <AcrescimoVenda
+          base={venda.subtotal - venda.desconto}
+          acrescimoAtual={venda.acrescimo}
+          confirmar={async (a) => {
+            atualizar(await window.pdv.vendas.acrescimoVenda(a), false)
             setModal(null)
             return null
           }}

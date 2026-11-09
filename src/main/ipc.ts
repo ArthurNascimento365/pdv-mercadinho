@@ -98,6 +98,7 @@ import { consultarEan } from './servicos/consultaEan'
 import { resolverCodigo } from './servicos/leitorCodigo'
 import { consultarOpenFoodFacts } from './servicos/openFoodFacts'
 import {
+  acrescimoVenda,
   adicionarPagamento,
   adicionarPorCodigo,
   adicionarProduto,
@@ -209,6 +210,7 @@ export function registrarIpc({ db, caminhoBanco, impressao, backup }: ContextoIp
   tratar('precos:salvarConfigAPrazo', (cfg) => definirConfigAPrazo(db, cfg))
   tratar('vendas:descontoItem', (itemId, desconto) => descontoItem(db, itemId, desconto))
   tratar('vendas:descontoVenda', (desconto) => descontoVenda(db, desconto))
+  tratar('vendas:acrescimoVenda', (acrescimo) => acrescimoVenda(db, acrescimo))
   tratar('vendas:cancelarItem', (itemId) => cancelarItem(db, itemId))
   tratar('vendas:cancelar', () => cancelarVendaAberta(db))
   tratar('vendas:adicionarPagamento', (forma, valor, senha) => adicionarPagamento(db, forma, valor, senha))

@@ -10,6 +10,7 @@ import { abrirBanco, type Banco } from '../../src/main/db/conexao'
 import { definirConfigAPrazo } from '../../src/main/repos/configuracoes'
 import { criarProduto, obterProduto } from '../../src/main/repos/produtos'
 import {
+  acrescimoVenda,
   adicionarPagamento,
   adicionarPorCodigo,
   adicionarProduto,
@@ -157,6 +158,32 @@ describe('vendas', () => {
       expect(depois.itens[0]!.cancelado).toBe(true)
       expect([depois.subtotal, depois.desconto, depois.total]).toEqual([699, 699, 0])
       expect(() => cancelarItem(db, v.itens[0]!.id)).toThrow(/já foi cancelado/)
+    })
+
+    it('acréscimo soma no total, junto com o desconto, e entra no pagamento', () => {
+      venda(bipar(EAN_LEITE, 2000)) // 14,98
+      descontoVenda(db, 98)
+      const v = acrescimoVenda(db, 150)
+      expect([v.subtotal, v.desconto, v.acrescimo, v.total]).toEqual([1498, 98, 150, 1550])
+      // Item novo: o acréscimo (em reais) continua o mesmo.
+      expect(venda(bipar(EAN_LEITE)).total).toBe(2247 - 98 + 150)
+      expect(acrescimoVenda(db, 0).total).toBe(2247 - 98)
+      acrescimoVenda(db, 300)
+      adicionarPagamento(db, 'dinheiro', 2247 - 98)
+      expect(() => finalizarVenda(db)).toThrow(/Falta receber R\$\s3,00/)
+      adicionarPagamento(db, 'pix', 300)
+      expect(finalizarVenda(db)).toMatchObject({ status: 'finalizada', acrescimo: 300, total: 2449, troco: 0 })
+    })
+
+    it('acréscimo: recusa valor inválido e zera quando a venda fica sem itens', () => {
+      const v = venda(bipar(EAN_LEITE))
+      expect(() => acrescimoVenda(db, -1)).toThrow(/inválido/)
+      expect(() => acrescimoVenda(db, 1.5)).toThrow(/inválido/)
+      expect(() => acrescimoVenda(db, 10_000_001)).toThrow(/alto demais/)
+      acrescimoVenda(db, 500)
+      const depois = cancelarItem(db, v.itens[0]!.id)
+      expect([depois.subtotal, depois.acrescimo, depois.total]).toEqual([0, 0, 0])
+      expect(() => acrescimoVenda(db, 100)).toThrow(/sem itens/)
     })
 
     it('alterar a quantidade recalcula o item e a venda, limitando o desconto', () => {

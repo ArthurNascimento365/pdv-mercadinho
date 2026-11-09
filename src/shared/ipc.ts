@@ -92,6 +92,7 @@ export interface CanaisIpc {
   'precos:salvarConfigAPrazo': { args: [cfg: ConfigAPrazo]; retorno: ConfigAPrazo }
   'vendas:descontoItem': { args: [itemId: number, desconto: Centavos]; retorno: Venda }
   'vendas:descontoVenda': { args: [desconto: Centavos]; retorno: Venda }
+  'vendas:acrescimoVenda': { args: [acrescimo: Centavos]; retorno: Venda }
   'vendas:cancelarItem': { args: [itemId: number]; retorno: Venda }
   'vendas:cancelar': { args: []; retorno: void }
   'vendas:adicionarPagamento': {
@@ -233,6 +234,7 @@ export interface PdvApi {
     alterarTabelaItem(itemId: number, tabela: TabelaPreco): Promise<Venda>
     descontoItem(itemId: number, desconto: Centavos): Promise<Venda>
     descontoVenda(desconto: Centavos): Promise<Venda>
+    acrescimoVenda(acrescimo: Centavos): Promise<Venda>
     cancelarItem(itemId: number): Promise<Venda>
     cancelar(): Promise<void>
     adicionarPagamento(forma: FormaPagamento, valor: Centavos, senhaGerente?: string | null): Promise<Venda>

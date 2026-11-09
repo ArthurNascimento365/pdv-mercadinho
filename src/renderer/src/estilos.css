@@ -1176,6 +1176,11 @@ button.acao-perigo kbd {
     display: none;
   }
 
+  /* Item + Cupom cabem lado a lado; Venda (o grupo maior) vai para a segunda linha. */
+  .caixa-grupo-venda {
+    order: 1;
+  }
+
   .caixa-itens .tabela td {
     padding: 8px 10px;
     font-size: var(--fs-4);

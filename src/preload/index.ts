@@ -47,6 +47,7 @@ const api: PdvApi = {
     alterarTabelaItem: (itemId, tabela) => invocar('vendas:alterarTabelaItem', itemId, tabela),
     descontoItem: (itemId, desconto) => invocar('vendas:descontoItem', itemId, desconto),
     descontoVenda: (desconto) => invocar('vendas:descontoVenda', desconto),
+    acrescimoVenda: (acrescimo) => invocar('vendas:acrescimoVenda', acrescimo),
     cancelarItem: (itemId) => invocar('vendas:cancelarItem', itemId),
     cancelar: () => invocar('vendas:cancelar'),
     adicionarPagamento: (forma, valor, senhaGerente = null) =>

@@ -34,10 +34,11 @@ export function relatorioVendas(db: Banco, periodo: unknown): RelatorioVendas {
       `SELECT
          COALESCE(SUM(status = 'finalizada'), 0) AS quantidade,
          COALESCE(SUM(CASE WHEN status = 'finalizada' THEN total END), 0) AS faturamento,
-         COALESCE(SUM(CASE WHEN status = 'finalizada' THEN desconto END), 0) AS descontos_venda
+         COALESCE(SUM(CASE WHEN status = 'finalizada' THEN desconto END), 0) AS descontos_venda,
+         COALESCE(SUM(CASE WHEN status = 'finalizada' THEN acrescimo END), 0) AS acrescimos
        FROM vendas WHERE finalizada_em BETWEEN ? AND ?`
     )
-    .get(ini, fim) as { quantidade: number; faturamento: number; descontos_venda: number }
+    .get(ini, fim) as { quantidade: number; faturamento: number; descontos_venda: number; acrescimos: number }
   const descontosItens = (
     db
       .prepare(
@@ -81,6 +82,7 @@ export function relatorioVendas(db: Banco, periodo: unknown): RelatorioVendas {
     canceladas,
     faturamento: t.faturamento,
     descontos: t.descontos_venda + descontosItens,
+    acrescimos: t.acrescimos,
     ticketMedio: t.quantidade ? Math.round(t.faturamento / t.quantidade) : 0,
     porDia,
     porForma,
@@ -181,7 +183,7 @@ interface LinhaVendida {
 }
 
 /**
- * Receita por item já com o desconto da venda rateado (proporcional ao valor do item).
+ * Receita por item já com o desconto e o acréscimo da venda rateados (proporcional ao valor do item).
  * Custo: o gravado na venda; para vendas antigas, o custo atual do produto.
  */
 function vendidosPorItem(db: Banco, periodo: unknown): LinhaVendida[] {

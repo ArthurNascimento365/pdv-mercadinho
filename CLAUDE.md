@@ -50,8 +50,10 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   `dist/PDV Mercadinho Setup 0.1.12.exe` (08/11/2026).
 - **08/11 — Relatórios → F7 Consultar vendas** (venda a venda, busca pelo número, cupom,
   reimpressão e cancelamento) e saldo devedor no relatório de vendas — no instalador
-  `dist/PDV Mercadinho Setup 0.1.13.exe` (08/11/2026). Schema do banco na versão 9. 317 testes
-  (29 arquivos).
+  `dist/PDV Mercadinho Setup 0.1.13.exe` (08/11/2026).
+- **08/11 — acréscimo na venda** (botão "F1 Acréscimo pendente", porcentagem ou valor; cupom e
+  relatório de vendas) e **botão "Tabela do item" retirado** da barra (F4 continua). Ainda sem
+  instalador. Schema do banco na versão 10. 321 testes (29 arquivos).
 
 ### Em andamento
 
@@ -210,7 +212,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   cartão/Pix são no valor exato, revalidados na finalização. Desconto da venda é limitado
   ao subtotal (reduz sozinho se itens forem cancelados).
 - Caixa (tela Vender): Enter lança o código; `3*código` multiplica; PLU de até 6 dígitos
-  digitado à mão pede o peso; F2 busca, F5/F6 desconto item/venda, F7/F8 cancela item/venda,
+  digitado à mão pede o peso; F2 busca, F5/F6 desconto item/venda, F1 acréscimo na venda, F7/F8 cancela item/venda,
   F9 cancela a última venda finalizada. Pagamento: Enter com o campo de código vazio (e itens na
   venda) ou F10; dentro dele F1–F5 escolhe a forma, Enter lança e, com tudo pago, finaliza.
   Pagamento dividido: lança uma parte numa forma (Enter), escolhe a próxima para o restante;
@@ -221,6 +223,13 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   usam `onMouseDown` com `preventDefault` para o campo de código não roubar o foco do editor.
   Desconto na venda (F6) abre `DescontoVenda` (Modais.tsx): escolha entre porcentagem (F1) e
   valor em reais (F2), com prévia do total; vazio ou 0 tira o desconto.
+  Acréscimo na venda (F1, botão "Acréscimo pendente" — nome pedido pelo usuário) abre
+  `AcrescimoVenda`, a mesma janela (`AjusteVenda`) somando; a porcentagem vale sobre
+  subtotal − desconto e vira valor em reais (`vendas.acrescimo`, migração 10; total = subtotal −
+  desconto + acréscimo; zera se a venda fica sem itens). Cupom: Subtotal / Desconto / Acréscimo
+  antes do TOTAL; relatório de vendas mostra "Acréscimos"; a margem rateia o acréscimo como
+  receita. Em ≤ 1280 px o grupo Venda da barra vai para a segunda linha (`order`), para a barra
+  caber em 2 linhas a 1024.
   Pensada também para o cliente a 1,5 m: cartão "Acabou de passar" (último item ativo; um item
   cancelado fica ali em vermelho por 5 s, `recemCancelado`), "Subtotal" antes dos descontos e
   "Descontos" em verde (`economia` = bruto − total), total com `--fs-total` (≥ 48 px), lista com
@@ -283,7 +292,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   (atacarejo/promoção valem só na PROMOCIONAL). Com `tabela.a_prazo.perguntar` ligado, a janela
   `EscolhaTabela` abre após cada linha nova que tenha preço a prazo diferente: setas (← ↑ / → ↓, Tab)
   escolhem, Enter confirma a marcada (começa na atual), Esc fecha; dígito ou `*` mantém a tabela e vai para o campo de código
-  (o leitor nunca perde um bipe). F4 na tela Vender troca a tabela do item selecionado.
+  (o leitor nunca perde um bipe). F4 na tela Vender troca a tabela do item selecionado (só atalho: o botão saiu da barra a pedido do usuário).
   Etiqueta de balança não tem preço NORMAL. CSV aceita `preco_a_prazo`.
 - Importação CSV não sobrescreve estoque de produto existente; estoque muda por entrada
   de mercadoria/ajuste (Fase 3). `preco_alterado_em` alimenta as etiquetas de gôndola (Fase 5).

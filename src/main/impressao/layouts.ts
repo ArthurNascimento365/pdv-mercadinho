@@ -71,11 +71,10 @@ export function cupomVenda(venda: Venda, loja: ContextoLoja, caixa: { id: number
   }
 
   doc.push({ tipo: 'separador' })
-  if (venda.desconto > 0) {
-    doc.push(
-      { tipo: 'colunas', esquerda: 'Subtotal', direita: valor(venda.subtotal) },
-      { tipo: 'colunas', esquerda: 'Desconto', direita: valor(-venda.desconto) }
-    )
+  if (venda.desconto > 0 || venda.acrescimo > 0) {
+    doc.push({ tipo: 'colunas', esquerda: 'Subtotal', direita: valor(venda.subtotal) })
+    if (venda.desconto > 0) doc.push({ tipo: 'colunas', esquerda: 'Desconto', direita: valor(-venda.desconto) })
+    if (venda.acrescimo > 0) doc.push({ tipo: 'colunas', esquerda: 'Acréscimo', direita: valor(venda.acrescimo) })
   }
   doc.push({ tipo: 'colunas', esquerda: 'TOTAL', direita: real(venda.total), negrito: true, grande: true })
   for (const p of venda.pagamentos) {

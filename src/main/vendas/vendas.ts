@@ -33,6 +33,7 @@ interface LinhaVenda {
   cancelada_em: string | null
   subtotal: number
   desconto: number
+  acrescimo: number
   total: number
   troco: number
   saldo_devedor: number
@@ -100,6 +101,7 @@ export function obterVenda(db: Banco, id: number): Venda | null {
     canceladaEm: v.cancelada_em,
     subtotal: v.subtotal,
     desconto: v.desconto,
+    acrescimo: v.acrescimo,
     total: v.total,
     pago,
     restante: Math.max(0, v.total - pago),
@@ -129,13 +131,17 @@ function exigirVendaAberta(db: Banco): number {
   return id
 }
 
-/** Recalcula subtotal e total. O desconto da venda nunca passa do subtotal. */
+/**
+ * Recalcula subtotal e total (subtotal − desconto + acréscimo). O desconto da venda nunca passa
+ * do subtotal; sem item nenhum, o acréscimo zera junto.
+ */
 function recalcular(db: Banco, vendaId: number): void {
   db.prepare(
     `UPDATE vendas SET
        subtotal = s.valor,
        desconto = MIN(desconto, s.valor),
-       total = s.valor - MIN(desconto, s.valor)
+       acrescimo = CASE WHEN s.valor = 0 THEN 0 ELSE acrescimo END,
+       total = s.valor - MIN(desconto, s.valor) + CASE WHEN s.valor = 0 THEN 0 ELSE acrescimo END
      FROM (SELECT COALESCE(SUM(total), 0) AS valor FROM venda_itens WHERE venda_id = ? AND cancelado = 0) AS s
      WHERE id = ?`
   ).run(vendaId, vendaId)
@@ -405,6 +411,20 @@ export function descontoVenda(db: Banco, desconto: unknown): Venda {
     const { subtotal } = db.prepare('SELECT subtotal FROM vendas WHERE id = ?').get(vendaId) as { subtotal: number }
     if (valor > subtotal) throw new ErroNegocio(`Desconto maior que a venda (${formatarMoeda(subtotal)})`)
     db.prepare('UPDATE vendas SET desconto = ? WHERE id = ?').run(valor, vendaId)
+    recalcular(db, vendaId)
+    return obterVenda(db, vendaId)!
+  })
+}
+
+/** Acréscimo no total da venda, em centavos (a janela converte a porcentagem). 0 tira o acréscimo. */
+export function acrescimoVenda(db: Banco, acrescimo: unknown): Venda {
+  return emTransacao(db, () => {
+    const vendaId = exigirVendaAberta(db)
+    const valor = exigirCentavos(acrescimo, 'Acréscimo')
+    if (valor > PAGAMENTO_MAXIMO) throw new ErroNegocio('Acréscimo alto demais')
+    const { subtotal } = db.prepare('SELECT subtotal FROM vendas WHERE id = ?').get(vendaId) as { subtotal: number }
+    if (valor > 0 && subtotal === 0) throw new ErroNegocio('Venda sem itens')
+    db.prepare('UPDATE vendas SET acrescimo = ? WHERE id = ?').run(valor, vendaId)
     recalcular(db, vendaId)
     return obterVenda(db, vendaId)!
   })

@@ -15,6 +15,7 @@ import {
 } from '../../src/main/relatorios/relatorios'
 import { criarProduto } from '../../src/main/repos/produtos'
 import {
+  acrescimoVenda,
   adicionarPagamento,
   adicionarProduto,
   cancelarVendaFinalizada,
@@ -76,6 +77,23 @@ describe('relatórios', () => {
     adicionarPagamento(db, 'dinheiro', 1500)
     finalizarVenda(db, true)
     expect(relatorioVendas(db, hoje)).toMatchObject({ faturamento: 2000, saldoDevedor: 500 })
+  })
+
+  it('acréscimo entra no faturamento, no total de acréscimos e na receita da margem', () => {
+    adicionarProduto(db, arroz, 1000) // 20,00
+    adicionarProduto(db, cafe, 1000) // 10,00
+    acrescimoVenda(db, 300) // 10%: rateado 2,00 no arroz e 1,00 no café
+    adicionarPagamento(db, 'dinheiro', 3300)
+    finalizarVenda(db)
+    expect(relatorioVendas(db, hoje)).toMatchObject({ faturamento: 3300, acrescimos: 300, descontos: 0 })
+    const m = relatorioMargem(db, hoje)
+    expect(m.produtos.map((p) => [p.descricao, p.receita])).toEqual(
+      expect.arrayContaining([
+        ['Arroz', 2200],
+        ['Café', 1100]
+      ])
+    )
+    expect(m.total.receita).toBe(3300)
   })
 
   it('consultar vendas: uma a uma, mais recente primeiro, com canceladas e busca pelo número', () => {

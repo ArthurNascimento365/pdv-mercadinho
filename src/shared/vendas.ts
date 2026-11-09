@@ -62,6 +62,8 @@ export interface Venda {
   subtotal: Centavos
   /** Desconto no total da venda. */
   desconto: Centavos
+  /** Acréscimo no total da venda (total = subtotal − desconto + acréscimo). */
+  acrescimo: Centavos
   total: Centavos
   pago: Centavos
   /** Quanto ainda falta receber (nunca negativo). */
