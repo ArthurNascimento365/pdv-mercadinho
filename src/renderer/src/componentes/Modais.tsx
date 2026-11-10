@@ -4,6 +4,7 @@ import { TABELAS_PRECO, type TabelaPreco } from '@shared/precos'
 import type { Produto } from '@shared/produtos'
 import { lerDesconto } from '@shared/vendas'
 import { mensagemErro, useTeclas } from '../util'
+import { Icone } from './Icone'
 
 interface PromptProps {
   titulo: string
@@ -288,26 +289,24 @@ export function EscolhaTabela({
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => onEscolher(tabela)}
     >
-      <span>{TABELAS_PRECO[tabela]}</span>
+      {tabela === marcada && <Icone nome="ok" tamanho={22} />}
+      {TABELAS_PRECO[tabela]}
     </button>
   )
 
+  // Cartão compacto no pé da lista, sem escurecer a tela: item e total continuam à vista.
   return (
-    <div className="fundo-modal">
-      <div className="modal modal-pequeno">
-        <h2>Tabela de preço</h2>
-        <p>
-          <b>{descricao}</b> · {quantidade}
-        </p>
-        <div className="tabela-opcoes">
-          {opcao('varejo')}
-          {opcao('a_prazo')}
-        </div>
-        <p className="dica">
-          <kbd>←</kbd> <kbd>→</kbd> escolhe · <kbd>Enter</kbd> confirma · <kbd>Esc</kbd> deixa como está. Bipar o
-          próximo produto mantém a tabela.
-        </p>
+    <div className="escolha-tabela" role="dialog" aria-label="Tabela de preço">
+      <p className="escolha-tabela-item">
+        Tabela de preço · <b>{descricao}</b> · {quantidade}
+      </p>
+      <div className="tabela-opcoes">
+        {opcao('varejo')}
+        {opcao('a_prazo')}
       </div>
+      <p className="dica">
+        <kbd>←</kbd> <kbd>→</kbd> escolhe · <kbd>Enter</kbd> confirma · <kbd>Esc</kbd> deixa como está
+      </p>
     </div>
   )
 }

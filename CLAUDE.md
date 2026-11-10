@@ -4,7 +4,7 @@ PDV desktop para mercadinho: venda 100% offline, cupom não fiscal.
 Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP e Diferenciais"
 (https://claude.ai/artifact/M4nBv2G4Nz6dUZS8yi7Uip).
 
-## Estado do projeto (atualizado em 08/11/2026)
+## Estado do projeto (atualizado em 10/11/2026)
 
 ### Concluído — MVP completo (fases 0 a 5 do roadmap)
 
@@ -59,8 +59,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   versão 11.
 - **08/11 — via do fiado e recibo de pagamento saem sempre** (a opção do cliente só tira o cupom) e
   **busca de cliente corrigida** (por nome trazia todo cliente com telefone) — no instalador `dist/PDV Mercadinho Setup 0.1.16.exe`
-  (08/11/2026).
-  325 testes (29 arquivos).
+  (08/11/2026). 325 testes (29 arquivos).
+- **10/11 — janela da tabela de preço discreta:** cartão compacto no pé da lista, sem escurecer a
+  tela, opção marcada cheia em verde com ✓. Ainda sem instalador.
 
 ### Em andamento
 
@@ -301,7 +302,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   (`tabela.a_prazo.percentual` em centésimos de %, `precoAPrazo` em shared/precos.ts). O item
   guarda `venda_itens.tabela_preco`; `reprecificarProduto` respeita a tabela de cada linha
   (atacarejo/promoção valem só na PROMOCIONAL). Com `tabela.a_prazo.perguntar` ligado, a janela
-  `EscolhaTabela` abre após cada linha nova que tenha preço a prazo diferente: setas (← ↑ / → ↓, Tab)
+  `EscolhaTabela` (cartão `.escolha-tabela` dentro de `.caixa-itens`, no pé da lista, sem `.fundo-modal`; a marcada
+  fica cheia em `--destaque` com ✓) abre após cada linha nova que tenha preço a prazo diferente: setas (← ↑ / → ↓, Tab)
   escolhem, Enter confirma a marcada (começa na atual), Esc fecha; dígito ou `*` mantém a tabela e vai para o campo de código
   (o leitor nunca perde um bipe). F4 na tela Vender troca a tabela do item selecionado (só atalho: o botão saiu da barra a pedido do usuário).
   Etiqueta de balança não tem preço NORMAL. CSV aceita `preco_a_prazo`.

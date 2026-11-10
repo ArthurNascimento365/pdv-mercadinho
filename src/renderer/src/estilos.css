@@ -741,6 +741,7 @@ button.acao-perigo kbd {
 }
 
 .caixa-itens {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1229,40 +1230,77 @@ button.acao-perigo kbd {
 }
 
 /* Janela da tabela de preço do item */
+/* Tabela de preço do item: cartão compacto no pé da lista, sem fundo escuro. */
+.escolha-tabela {
+  position: absolute;
+  bottom: 56px;
+  left: 50%;
+  z-index: 20;
+  display: grid;
+  gap: var(--e-2);
+  width: min(460px, calc(100% - 2 * var(--e-4)));
+  padding: var(--e-3) var(--e-4);
+  border: 2px solid var(--marca-600);
+  border-radius: var(--r-3);
+  background: var(--superficie);
+  box-shadow: var(--sombra-2);
+  transform: translateX(-50%);
+  animation: escolha-tabela-entra 0.15s ease-out;
+}
+
+@keyframes escolha-tabela-entra {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+.escolha-tabela-item {
+  overflow: hidden;
+  margin: 0;
+  color: var(--texto-fraco);
+  font-size: var(--fs-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.escolha-tabela-item b {
+  color: var(--texto);
+}
+
+.escolha-tabela .dica {
+  margin: 0;
+  text-align: center;
+}
+
 .tabela-opcoes {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--e-3);
+  gap: var(--e-2);
 }
 
 .tabela-opcao {
-  display: grid;
-  justify-items: center;
+  justify-content: center;
   gap: var(--e-2);
-  padding: var(--e-4);
+  min-height: 52px;
   border: 2px solid var(--borda);
-  border-radius: var(--r-3);
+  border-radius: var(--r-2);
   background: var(--superficie);
-  white-space: normal;
-}
-
-.tabela-opcao span {
+  color: var(--texto-fraco);
   font-size: var(--fs-4);
   font-weight: 600;
-}
-
-.tabela-opcao strong {
-  font-size: var(--fs-6);
-  font-variant-numeric: tabular-nums;
 }
 
 .tabela-opcao:hover {
   border-color: var(--marca-600);
 }
 
-.tabela-atual {
-  border-color: var(--marca-600);
-  background: var(--sucesso-fundo);
+/* A marcada: cheia, em verde, com o visto — dá para ver de longe qual está escolhida. */
+.tabela-opcao.tabela-atual {
+  border-color: var(--destaque);
+  background: var(--destaque);
+  color: var(--sobre-marca);
+  font-weight: 700;
 }
 
 .tipo-desconto {

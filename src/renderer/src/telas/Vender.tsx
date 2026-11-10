@@ -522,6 +522,25 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
             </p>
           )
         )}
+        {modal?.tipo === 'tabela' && (
+          <EscolhaTabela
+            descricao={modal.item.descricao}
+            quantidade={qtd(modal.item.quantidade, modal.item.unidade)}
+            atual={modal.item.tabela}
+            onEscolher={(tabela) => {
+              setModal(null)
+              if (tabela !== modal.item.tabela) {
+                void executar(async () => atualizar(await window.pdv.vendas.alterarTabelaItem(modal.item.id, tabela), false))
+              }
+            }}
+            onDigito={(c) => {
+              // Bipou o próximo produto sem responder: fica na tabela atual e o código segue.
+              setModal(null)
+              setCodigo((atual) => atual + c)
+            }}
+            onFechar={() => setModal(null)}
+          />
+        )}
       </section>
 
       <aside className="caixa-painel">
@@ -668,26 +687,6 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
           onImprimir={() => {
             setModal(null)
             void reimprimir(modal.vendaId)
-          }}
-          onFechar={() => setModal(null)}
-        />
-      )}
-
-      {modal?.tipo === 'tabela' && (
-        <EscolhaTabela
-          descricao={modal.item.descricao}
-          quantidade={qtd(modal.item.quantidade, modal.item.unidade)}
-          atual={modal.item.tabela}
-          onEscolher={(tabela) => {
-            setModal(null)
-            if (tabela !== modal.item.tabela) {
-              void executar(async () => atualizar(await window.pdv.vendas.alterarTabelaItem(modal.item.id, tabela), false))
-            }
-          }}
-          onDigito={(c) => {
-            // Bipou o próximo produto sem responder: fica na tabela atual e o código segue.
-            setModal(null)
-            setCodigo((atual) => atual + c)
           }}
           onFechar={() => setModal(null)}
         />
