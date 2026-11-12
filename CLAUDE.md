@@ -63,8 +63,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - **10/11 — janela da tabela de preço discreta:** cartão compacto no pé da lista, sem escurecer a
   tela, opção marcada cheia em verde com ✓ — no instalador `dist/PDV Mercadinho Setup 0.1.17.exe` (10/11/2026).
 - **12/11 — venda no fiado num papel só:** o cupom traz no fim a parte do fiado (cliente, valor no
-  fiado, saldo após a compra, assinatura); "Total recebido" não conta o fiado. Ainda sem
-  instalador. 327 testes (29 arquivos).
+  fiado, saldo após a compra, assinatura); "Total recebido" não conta o fiado — no instalador
+  `dist/PDV Mercadinho Setup 0.1.18.exe` (12/11/2026). 327 testes (29 arquivos).
 
 ### Em andamento
 
@@ -117,7 +117,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.18.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.19.
 4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
