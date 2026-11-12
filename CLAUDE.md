@@ -4,7 +4,7 @@ PDV desktop para mercadinho: venda 100% offline, cupom não fiscal.
 Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP e Diferenciais"
 (https://claude.ai/artifact/M4nBv2G4Nz6dUZS8yi7Uip).
 
-## Estado do projeto (atualizado em 10/11/2026)
+## Estado do projeto (atualizado em 12/11/2026)
 
 ### Concluído — MVP completo (fases 0 a 5 do roadmap)
 
@@ -62,6 +62,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   (08/11/2026). 325 testes (29 arquivos).
 - **10/11 — janela da tabela de preço discreta:** cartão compacto no pé da lista, sem escurecer a
   tela, opção marcada cheia em verde com ✓ — no instalador `dist/PDV Mercadinho Setup 0.1.17.exe` (10/11/2026).
+- **12/11 — venda no fiado num papel só:** o cupom traz no fim a parte do fiado (cliente, valor no
+  fiado, saldo após a compra, assinatura); "Total recebido" não conta o fiado. Ainda sem
+  instalador. 327 testes (29 arquivos).
 
 ### Em andamento
 
@@ -269,9 +272,14 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   guarda antes um "antes-de-restaurar" e reinicia o app.
 - Fiado: forma de pagamento "fiado" exige cliente na venda (F3); limite 0 = só com gerente.
   Cliente com `imprimir_cupom = 0` (migração 11; checkbox no FormCliente, ligado por padrão): em
-  `aposVenda` o cupom não sai sozinho para venda com ele; a **via do fiado (assinatura) e o recibo de
-  pagamento da dívida saem sempre** (pedido do usuário). A gaveta abre igual, o resultado traz
+  `aposVenda` o cupom não sai sozinho para venda com ele; **venda no fiado e recibo de pagamento
+  da dívida saem sempre** (pedido do usuário). A gaveta abre igual, o resultado traz
   `semCupomCliente` e a tela Vender avisa; F12/Consultar vendas imprimem o cupom.
+  **Venda no fiado = um papel só** (pedido do usuário, 12/11): `cupomVenda(..., fiado)` acrescenta no
+  fim "COMPRA NO FIADO", cliente, NO FIADO, "Saldo devedor após a compra" (soma da caderneta até o
+  lançamento da compra, `fiadoDaVenda` em servico.ts — igual na reimpressão) e a linha de assinatura.
+  Sai sempre que houver impressora (ignora impressão automática e a opção do cliente). Não existe
+  mais via separada. "Total recebido" no cupom exclui o fiado.
   Bloqueio (limite/atraso > `fiado.dias_atraso`) vem como `ErroNegocio(..., 'gerente')`; o IPC
   manda o erro com prefixo `[gerente] ` e o renderer usa `exigeGerente(e)` para pedir a senha.
   Fiado não entra na contagem do fechamento (`FORMAS_CONTAVEIS`); pagamento de fiado entra no

@@ -20,13 +20,13 @@ import { obterCliente } from '../fiado/fiado'
 import { obterConfigPix, payloadPix } from '../pix'
 import {
   cobrancaPix,
-  comprovanteCompraFiado,
   comprovanteMovimento,
   comprovanteRecebimentoFiado,
   cupomVenda,
   paginaTeste,
   relatorioFechamento,
-  type ContextoLoja
+  type ContextoLoja,
+  type FiadoNoCupom
 } from './layouts'
 import type { Transportes } from './transportes'
 
@@ -139,15 +139,28 @@ export class ServicoImpressao {
     const venda = obterVenda(this.db, exigirId(vendaId))
     if (!venda) throw new ErroNegocio('Venda não encontrada')
     const caixa = venda.caixaId !== null ? obterCaixa(this.db, venda.caixaId) : null
-    return cupomVenda(venda, contextoLoja(this.db, this.cfg()), caixa)
+    return cupomVenda(venda, contextoLoja(this.db, this.cfg()), caixa, this.fiadoDaVenda(venda.id))
   }
 
-  /** Venda no fiado: via do estabelecimento para o cliente assinar. */
-  private comprovanteFiado(vendaId: number): Documento | null {
-    const venda = obterVenda(this.db, vendaId)
-    if (!venda || venda.clienteId === null || !venda.pagamentos.some((p) => p.forma === 'fiado')) return null
-    const cliente = obterCliente(this.db, venda.clienteId)
-    return cliente ? comprovanteCompraFiado(venda, cliente, contextoLoja(this.db, this.cfg())) : null
+  /**
+   * Venda que foi para a caderneta: nome do cliente e saldo dele logo depois desta compra
+   * (soma da caderneta até o lançamento da compra), para o cupom sair igual na reimpressão.
+   */
+  private fiadoDaVenda(vendaId: number): FiadoNoCupom | null {
+    const compra = this.db
+      .prepare(
+        `SELECT l.id, l.cliente_id, c.nome FROM fiado_lancamentos l JOIN clientes c ON c.id = l.cliente_id
+         WHERE l.venda_id = ? AND l.tipo = 'compra'`
+      )
+      .get(vendaId) as { id: number; cliente_id: number; nome: string } | undefined
+    if (!compra) return null
+    const { saldo } = this.db
+      .prepare(
+        `SELECT COALESCE(SUM(CASE WHEN tipo = 'compra' THEN valor ELSE -valor END), 0) AS saldo
+         FROM fiado_lancamentos WHERE cliente_id = ? AND id <= ?`
+      )
+      .get(compra.cliente_id, compra.id) as { saldo: number }
+    return { cliente: compra.nome, saldoApos: saldo }
   }
 
   imprimirVenda(vendaId: unknown): Promise<void> {
@@ -189,18 +202,19 @@ export class ServicoImpressao {
     try {
       const venda = obterVenda(this.db, exigirId(vendaId))
       if (!venda || venda.status !== 'finalizada') throw new ErroNegocio('Venda não finalizada')
-      // Cliente marcado para não imprimir: o cupom não sai sozinho (F12 imprime). A via do fiado sai sempre.
+      // Venda no fiado: o cupom (que traz a parte do fiado e a assinatura) sai sempre que houver
+      // impressora, é a prova da dívida. Nas outras, o cliente marcado para não imprimir fica sem
+      // cupom (F12 imprime) e vale a impressão automática.
+      const noFiado = this.fiadoDaVenda(venda.id) !== null
       const cliente = venda.clienteId !== null ? obterCliente(this.db, venda.clienteId) : null
-      const semCupomCliente = cliente && !cliente.imprimirCupom ? cliente.nome : undefined
-      const imprimir = cfg.modo !== 'nenhuma' && cfg.imprimirAutomatico && !semCupomCliente
+      const semCupomCliente = !noFiado && cliente && !cliente.imprimirCupom ? cliente.nome : undefined
+      const imprimir = cfg.modo !== 'nenhuma' && (noFiado || (cfg.imprimirAutomatico && !semCupomCliente))
       const gaveta =
         cfg.gaveta !== 'nao' &&
         cfg.modo !== 'nenhuma' &&
         cfg.modo !== 'driver' &&
         venda.pagamentos.some((p) => p.forma === 'dinheiro')
-      // A via do fiado sai sempre que houver impressora: é a prova da dívida.
-      const fiado = cfg.modo !== 'nenhuma' ? this.comprovanteFiado(venda.id) : null
-      const documentos = [...(imprimir ? [this.documentoVenda(venda.id)] : []), ...(fiado ? [fiado] : [])]
+      const documentos = imprimir ? [this.documentoVenda(venda.id)] : []
       if (documentos.length === 0 && !gaveta) return { impresso: false, gaveta: false, erro: null, semCupomCliente }
       await this.enviar(documentos, { gaveta })
       return { impresso: documentos.length > 0, gaveta, erro: null, semCupomCliente }

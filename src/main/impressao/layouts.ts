@@ -40,7 +40,22 @@ function cabecalho(loja: ContextoLoja): Documento {
   ]
 }
 
-export function cupomVenda(venda: Venda, loja: ContextoLoja, caixa: { id: number; operador: string } | null): Documento {
+/** Parte do fiado no cupom: cliente e saldo dele logo depois desta compra (vale também na reimpressão). */
+export interface FiadoNoCupom {
+  cliente: string
+  saldoApos: number
+}
+
+/**
+ * Cupom da venda. Venda no fiado sai num papel só: o cupom e, no fim, a parte do fiado com a
+ * linha para o cliente assinar (antes eram duas vias separadas).
+ */
+export function cupomVenda(
+  venda: Venda,
+  loja: ContextoLoja,
+  caixa: { id: number; operador: string } | null,
+  fiado: FiadoNoCupom | null = null
+): Documento {
   const doc: Documento = [
     ...cabecalho(loja),
     { tipo: 'texto', texto: 'CUPOM NÃO FISCAL', alinhamento: 'centro', negrito: true },
@@ -82,8 +97,10 @@ export function cupomVenda(venda: Venda, loja: ContextoLoja, caixa: { id: number
   }
   // Pagamento dividido, com troco ou com saldo devedor: a soma das formas, para o cliente
   // conferir sem fazer conta.
-  if (venda.pagamentos.length > 1 || venda.troco > 0 || venda.saldoDevedor > 0) {
-    doc.push({ tipo: 'colunas', esquerda: 'Total recebido', direita: valor(venda.pago), negrito: true })
+  // O fiado não é dinheiro recebido: fica fora da soma (vai para a parte do fiado, abaixo).
+  const recebido = venda.pago - venda.pagamentos.filter((p) => p.forma === 'fiado').reduce((s, p) => s + p.valor, 0)
+  if ((venda.pagamentos.length > 1 || venda.troco > 0 || venda.saldoDevedor > 0) && recebido > 0) {
+    doc.push({ tipo: 'colunas', esquerda: 'Total recebido', direita: valor(recebido), negrito: true })
   }
   if (venda.troco > 0) doc.push({ tipo: 'colunas', esquerda: 'Troco', direita: valor(venda.troco), negrito: true })
   if (venda.saldoDevedor > 0) {
@@ -92,6 +109,22 @@ export function cupomVenda(venda: Venda, loja: ContextoLoja, caixa: { id: number
 
   const itens = venda.itens.filter((x) => !x.cancelado).length
   doc.push({ tipo: 'texto', texto: `${itens} ${itens === 1 ? 'item' : 'itens'}` }, { tipo: 'separador' })
+  if (fiado) {
+    const noFiado = venda.pagamentos.filter((p) => p.forma === 'fiado').reduce((s, p) => s + p.valor, 0)
+    doc.push(
+      { tipo: 'texto', texto: 'COMPRA NO FIADO', alinhamento: 'centro', negrito: true },
+      { tipo: 'texto', texto: `Cliente: ${fiado.cliente}`, negrito: true },
+      { tipo: 'colunas', esquerda: 'NO FIADO', direita: real(noFiado), negrito: true, grande: true },
+      { tipo: 'colunas', esquerda: 'Saldo devedor após a compra', direita: real(fiado.saldoApos), negrito: true },
+      { tipo: 'espaco' },
+      { tipo: 'texto', texto: 'Reconheço a dívida acima.' },
+      { tipo: 'espaco' },
+      { tipo: 'espaco' },
+      { tipo: 'separador', caractere: '_' },
+      { tipo: 'texto', texto: fiado.cliente, alinhamento: 'centro' },
+      { tipo: 'separador' }
+    )
+  }
   for (const t of linhasDe(loja.rodape)) doc.push({ tipo: 'texto', texto: t, alinhamento: 'centro' })
   return doc
 }
@@ -168,32 +201,6 @@ export function relatorioFechamento(caixa: ResumoCaixa, loja: ContextoLoja): Doc
     { tipo: 'texto', texto: 'Operador', alinhamento: 'centro' }
   )
   return doc
-}
-
-/** Via do estabelecimento da compra no fiado: o cliente assina. */
-export function comprovanteCompraFiado(
-  venda: Venda,
-  cliente: { nome: string; saldo: number },
-  loja: ContextoLoja
-): Documento {
-  const fiado = venda.pagamentos.filter((p) => p.forma === 'fiado').reduce((s, p) => s + p.valor, 0)
-  return [
-    ...cabecalho(loja),
-    { tipo: 'texto', texto: 'COMPRA NO FIADO', alinhamento: 'centro', negrito: true },
-    { tipo: 'texto', texto: 'via do estabelecimento', alinhamento: 'centro' },
-    { tipo: 'colunas', esquerda: `Venda nº ${venda.id}`, direita: dataHora(venda.finalizadaEm) },
-    { tipo: 'texto', texto: `Cliente: ${cliente.nome}`, negrito: true },
-    { tipo: 'separador' },
-    { tipo: 'colunas', esquerda: 'Total da compra', direita: valor(venda.total) },
-    { tipo: 'colunas', esquerda: 'NO FIADO', direita: real(fiado), negrito: true, grande: true },
-    { tipo: 'colunas', esquerda: 'Saldo devedor agora', direita: real(cliente.saldo), negrito: true },
-    { tipo: 'espaco' },
-    { tipo: 'texto', texto: 'Reconheço a dívida acima.' },
-    { tipo: 'espaco' },
-    { tipo: 'espaco' },
-    { tipo: 'separador', caractere: '_' },
-    { tipo: 'texto', texto: cliente.nome, alinhamento: 'centro' }
-  ]
 }
 
 export function comprovanteRecebimentoFiado(

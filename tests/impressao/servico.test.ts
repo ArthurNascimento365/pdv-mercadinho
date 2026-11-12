@@ -196,7 +196,23 @@ describe('serviço de impressão', () => {
     })
   })
 
-  it('cliente marcado para não imprimir: o cupom não sai, a via do fiado sai sempre, a gaveta abre e o F12 imprime', async () => {
+  it('cliente marcado para não imprimir: venda sem fiado fica sem cupom, a gaveta abre e o F12 imprime', async () => {
+    configurar({ modo: 'windows', nome: 'x', imprimirAutomatico: true })
+    const clienteId = criarCliente(db, { nome: 'Zé', telefone: null, limite: 10_000, imprimirCupom: false }).id
+    adicionarProduto(db, produtoId, 3000) // 22,47
+    definirClienteVenda(db, clienteId)
+    adicionarPagamento(db, 'dinheiro', 2247)
+    const v = finalizarVenda(db)
+    const t = transportesFalsos()
+    const s = new ServicoImpressao(db, t)
+    expect(await s.aposVenda(v.id)).toEqual({ impresso: false, gaveta: true, erro: null, semCupomCliente: 'Zé' })
+    expect(t.envios).toHaveLength(1)
+    expect(texto(t.envios[0]!.bytes!)).not.toContain('CUPOM N')
+    await s.imprimirVenda(v.id)
+    expect(texto(t.envios[1]!.bytes!)).toContain('CUPOM N')
+  })
+
+  it('venda no fiado de cliente marcado para não imprimir: sai o cupom único (é a prova da dívida)', async () => {
     configurar({ modo: 'windows', nome: 'x', imprimirAutomatico: true })
     const clienteId = criarCliente(db, { nome: 'Zé', telefone: null, limite: 10_000, imprimirCupom: false }).id
     adicionarProduto(db, produtoId, 3000) // 22,47
@@ -205,14 +221,12 @@ describe('serviço de impressão', () => {
     adicionarPagamento(db, 'dinheiro', 1247)
     const v = finalizarVenda(db)
     const t = transportesFalsos()
-    const s = new ServicoImpressao(db, t)
-    expect(await s.aposVenda(v.id)).toEqual({ impresso: true, gaveta: true, erro: null, semCupomCliente: 'Zé' })
+    expect(await new ServicoImpressao(db, t).aposVenda(v.id)).toEqual({ impresso: true, gaveta: true, erro: null })
     expect(t.envios).toHaveLength(1)
-    expect(texto(t.envios[0]!.bytes!)).not.toContain('CUPOM N')
-    expect(texto(t.envios[0]!.bytes!)).toContain('COMPRA NO FIADO')
+    const b = texto(t.envios[0]!.bytes!)
+    expect(b).toContain('CUPOM N')
+    expect(b).toContain('COMPRA NO FIADO')
     expect(temGaveta(t.envios[0]!.bytes!)).toBe(true)
-    await s.imprimirVenda(v.id)
-    expect(texto(t.envios[1]!.bytes!)).toContain('CUPOM N')
   })
 
   it('recibo de pagamento do fiado sai mesmo para cliente marcado para não imprimir cupom', async () => {
@@ -230,7 +244,7 @@ describe('serviço de impressão', () => {
     expect(temGaveta(t.envios[0]!.bytes!)).toBe(true)
   })
 
-  it('venda no fiado sai com a via de assinatura, mesmo sem impressão automática', async () => {
+  it('venda no fiado sai num papel só (cupom + fiado com assinatura), mesmo sem impressão automática', async () => {
     configurar({ modo: 'windows', nome: 'x', imprimirAutomatico: false })
     const clienteId = criarCliente(db, { nome: 'João da Silva', telefone: null, limite: 10_000 }).id
     adicionarProduto(db, produtoId, 3000)
@@ -239,11 +253,43 @@ describe('serviço de impressão', () => {
     const v = finalizarVenda(db)
     const t = transportesFalsos()
     expect(await new ServicoImpressao(db, t).aposVenda(v.id)).toMatchObject({ impresso: true, gaveta: false })
+    expect(t.envios).toHaveLength(1)
     const s = texto(t.envios[0]!.bytes!)
-    expect(s).not.toContain('CUPOM N') // o cupom é só no F12
+    expect(s).toContain('CUPOM N')
     expect(s).toContain('COMPRA NO FIADO')
     expect(s).toContain('Cliente: Jo\xe3o da Silva'.replace('\xe3', '\xc6')) // ã na CP850
-    expect(s).toContain('Saldo devedor agora')
+    // Um corte só: o papel não é dividido em duas vias.
+    expect(s.split('\x1dV').length - 1).toBe(1)
+  })
+
+  it('cupom do fiado: parte do fiado depois dos pagamentos, com o saldo daquele momento', () => {
+    const clienteId = criarCliente(db, { nome: 'Zé', telefone: null, limite: 10_000 }).id
+    adicionarProduto(db, produtoId, 1000) // 7,49
+    definirClienteVenda(db, clienteId)
+    adicionarPagamento(db, 'fiado', 749)
+    const primeira = finalizarVenda(db)
+    adicionarProduto(db, produtoId, 2000) // 14,98
+    definirClienteVenda(db, clienteId)
+    adicionarPagamento(db, 'fiado', 1000)
+    adicionarPagamento(db, 'dinheiro', 498)
+    const segunda = finalizarVenda(db)
+    receberFiado(db, clienteId, 500, 'dinheiro')
+
+    const linhas = (id: number) =>
+      new ServicoImpressao(db, transportesFalsos()).previa('venda', id).linhas.map((l) => l.texto.trim())
+    const l1 = linhas(primeira.id)
+    const l2 = linhas(segunda.id)
+    expect(l2.findIndex((x) => x.startsWith('COMPRA NO FIADO'))).toBeGreaterThan(l2.findIndex((x) => x.startsWith('TOTAL')))
+    expect(l2.find((x) => x.startsWith('NO FIADO'))).toMatch(/R\$\s10,00$/)
+    // "Total recebido" só com o que entrou de verdade (o fiado fica de fora).
+    expect(l2.find((x) => x.startsWith('Total recebido'))).toMatch(/4,98$/)
+    expect(l1.some((x) => x.startsWith('Total recebido'))).toBe(false)
+    // Saldo logo depois de cada compra, não o de hoje (o pagamento de 5,00 veio depois).
+    expect(l1.find((x) => x.startsWith('Saldo devedor após a compra'))).toMatch(/R\$\s7,49$/)
+    expect(l2.find((x) => x.startsWith('Saldo devedor após a compra'))).toMatch(/R\$\s17,49$/)
+    expect(l2).toContain('Reconheço a dívida acima.')
+    // Venda sem fiado não tem a parte do fiado.
+    expect(linhas(vender([['dinheiro', 3000]]).id).some((x) => x.includes('FIADO'))).toBe(false)
   })
 
   it('cupom diagramado tem a largura exata da bobina', () => {

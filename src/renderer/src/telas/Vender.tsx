@@ -800,12 +800,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
             void window.pdv.hardware.aposVenda(v.id).then((r) => {
               if (r.erro) falhar(`Venda finalizada, mas o cupom/gaveta falhou: ${r.erro}. F12 tenta imprimir de novo.`)
               else if (r.semCupomCliente) {
-                setAviso({
-                  erro: false,
-                  texto: r.impresso
-                    ? `Saiu só a via do fiado: ${r.semCupomCliente} está marcado para não imprimir o cupom. F12 imprime o cupom.`
-                    : `Cupom não impresso: ${r.semCupomCliente} está marcado para não imprimir. F12 imprime.`
-                })
+                setAviso({ erro: false, texto: `Cupom não impresso: ${r.semCupomCliente} está marcado para não imprimir. F12 imprime.` })
               }
             })
           }}

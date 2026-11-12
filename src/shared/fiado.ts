@@ -8,7 +8,7 @@ export interface ClienteEntrada {
   limite: Centavos
   diaAcerto: number | null
   observacao: string | null
-  /** false = venda com este cliente não imprime o cupom sozinha (F12 imprime); a via do fiado sai sempre. */
+  /** false = venda com este cliente não imprime o cupom sozinha (F12 imprime); venda no fiado imprime sempre. */
   imprimirCupom: boolean
 }
 
