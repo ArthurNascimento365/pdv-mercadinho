@@ -15,14 +15,20 @@ function proximoCampo(e: React.KeyboardEvent<HTMLElement>): void {
   }
 }
 
+/** Nome do cliente sempre em maiúsculas (como a descrição do produto). */
+const maiusculas = (texto: string): string => texto.toLocaleUpperCase('pt-BR')
+
 export function FormCliente({
   cliente,
+  nomeInicial = '',
   onFechar
 }: {
   cliente: Cliente | null
+  /** Cliente novo vindo da busca: o que foi digitado já entra como nome. */
+  nomeInicial?: string
   onFechar: (salvo?: Cliente) => void
 }): React.JSX.Element {
-  const [nome, setNome] = useState(cliente?.nome ?? '')
+  const [nome, setNome] = useState(maiusculas(cliente?.nome ?? nomeInicial))
   const [telefone, setTelefone] = useState(cliente?.telefone ?? '')
   const [limite, setLimite] = useState(cliente ? centavosParaTexto(cliente.limite) : '100,00')
   const [dia, setDia] = useState(cliente?.diaAcerto ? String(cliente.diaAcerto) : '')
@@ -55,7 +61,7 @@ export function FormCliente({
         <div className="grade">
           <label className="largo">
             Nome
-            <input ref={refNome} value={nome} maxLength={80} onChange={(e) => setNome(e.target.value)} />
+            <input ref={refNome} value={nome} maxLength={80} onChange={(e) => setNome(maiusculas(e.target.value))} />
           </label>
           <label>
             Telefone / WhatsApp (com DDD)
@@ -120,7 +126,10 @@ export function BuscaCliente({
   const [novo, setNovo] = useState(false)
   const campo = useRef<HTMLInputElement>(null)
 
-  useEffect(() => campo.current?.focus(), [novo])
+  // Com o cadastro aberto, o foco é dele (o campo da busca só volta a pegá-lo depois).
+  useEffect(() => {
+    if (!novo) campo.current?.focus()
+  }, [novo])
   useEffect(() => {
     let cancelado = false
     const t = setTimeout(() => {
@@ -192,13 +201,20 @@ export function BuscaCliente({
           </table>
           {lista.length === 0 && <p className="vazio">Nenhum cliente. F2 cadastra.</p>}
         </div>
-        <p className="dica">
-          ↑ ↓ escolhe · Enter confirma · F2 novo cliente{onSemCliente ? ' · Del tira o cliente da venda' : ''} · Esc fecha
-        </p>
+        <div className="acoes">
+          <p className="dica">
+            ↑ ↓ escolhe · Enter confirma{onSemCliente ? ' · Del tira o cliente da venda' : ''} · Esc fecha
+          </p>
+          <span className="espaco" />
+          <button className="secundario" onClick={() => setNovo(true)}>
+            <kbd>F2</kbd> Novo cliente
+          </button>
+        </div>
       </div>
       {novo && (
         <FormCliente
           cliente={null}
+          nomeInicial={/d/.test(termo) ? '' : termo.trim()}
           onFechar={(c) => {
             setNovo(false)
             if (c) onEscolher(c)

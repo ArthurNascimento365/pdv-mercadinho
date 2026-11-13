@@ -345,7 +345,7 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
   /** Atalhos e botões da barra chamam as mesmas ações. */
   const acoes: Record<string, () => void> = {
     F2: () => setModal({ tipo: 'busca' }),
-    F3: () => (venda ? setModal({ tipo: 'cliente' }) : falhar('Bipe o primeiro item antes de identificar o cliente')),
+    F3: () => setModal({ tipo: 'cliente' }),
     F4: () => {
       if (exigirItem()) void abrirTabela(item!, true)
     },
@@ -670,7 +670,10 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
         <BuscaCliente
           onEscolher={(c) => {
             setModal(null)
-            void executar(async () => atualizar(await window.pdv.vendas.definirCliente(c.id), false))
+            void executar(async () => {
+              atualizar(await window.pdv.vendas.definirCliente(c.id), false)
+              setFinalizada(null)
+            })
           }}
           onSemCliente={() => {
             setModal(null)

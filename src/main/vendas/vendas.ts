@@ -447,10 +447,18 @@ export function cancelarVendaAberta(db: Banco): void {
   db.prepare(`UPDATE vendas SET status = 'cancelada', cancelada_em = ${AGORA} WHERE id = ?`).run(vendaId)
 }
 
-/** Identifica (ou tira) o cliente da venda em andamento. Necessário para o fiado. */
+/**
+ * Identifica (ou tira) o cliente da venda em andamento. Necessário para o fiado. Sem venda
+ * aberta, escolher o cliente já abre a venda (o cliente pode vir antes do primeiro item).
+ */
 export function definirClienteVenda(db: Banco, clienteId: unknown): Venda {
   return emTransacao(db, () => {
-    const vendaId = exigirVendaAberta(db)
+    let vendaId = idVendaAberta(db)
+    if (vendaId === null) {
+      if (clienteId === null) throw new ErroNegocio('Nenhuma venda em andamento')
+      const caixaId = exigirCaixaAberto(db)
+      vendaId = Number(db.prepare(`INSERT INTO vendas (status, caixa_id) VALUES ('aberta', ?)`).run(caixaId).lastInsertRowid)
+    }
     const venda = obterVenda(db, vendaId)!
     if (venda.pagamentos.some((p) => p.forma === 'fiado')) {
       throw new ErroNegocio('Remova o pagamento no fiado antes de trocar o cliente')

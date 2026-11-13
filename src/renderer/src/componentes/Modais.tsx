@@ -3,6 +3,7 @@ import { centavosParaTexto, formatarMoeda, type Centavos } from '@shared/dinheir
 import { TABELAS_PRECO, type TabelaPreco } from '@shared/precos'
 import type { Produto } from '@shared/produtos'
 import { lerDesconto } from '@shared/vendas'
+import { FormProduto } from '../telas/FormProduto'
 import { mensagemErro, useTeclas } from '../util'
 import { Icone } from './Icone'
 
@@ -368,10 +369,14 @@ export function BuscaProduto({
   const [termo, setTermo] = useState('')
   const [lista, setLista] = useState<Produto[]>([])
   const [sel, setSel] = useState(0)
+  const [novo, setNovo] = useState(false)
   const campo = useRef<HTMLInputElement>(null)
   const corpo = useRef<HTMLTableSectionElement>(null)
 
-  useEffect(() => campo.current?.focus(), [])
+  // Com o cadastro aberto, o foco é dele (o campo da busca só volta a pegá-lo depois).
+  useEffect(() => {
+    if (!novo) campo.current?.focus()
+  }, [novo])
 
   useEffect(() => {
     if (!termo.trim()) {
@@ -399,15 +404,23 @@ export function BuscaProduto({
     corpo.current?.children[sel]?.scrollIntoView({ block: 'nearest' })
   }, [sel])
 
-  useTeclas({
-    Escape: onFechar,
-    ArrowDown: () => setSel((s) => Math.min(s + 1, lista.length - 1)),
-    ArrowUp: () => setSel((s) => Math.max(s - 1, 0)),
-    Enter: () => {
-      const p = lista[sel]
-      if (p) onEscolher(p)
-    }
-  })
+  useTeclas(
+    {
+      Escape: onFechar,
+      ArrowDown: () => setSel((s) => Math.min(s + 1, lista.length - 1)),
+      ArrowUp: () => setSel((s) => Math.max(s - 1, 0)),
+      Enter: () => {
+        const p = lista[sel]
+        if (p) onEscolher(p)
+      },
+      F2: () => setNovo(true)
+    },
+    !novo
+  )
+
+  // O que foi digitado vira o código (só números) ou a descrição do produto novo.
+  const t = termo.trim()
+  const sugestao = /^d+$/.test(t) ? { ean: t } : t ? { descricao: t } : undefined
 
   return (
     <div className="fundo-modal">
@@ -447,10 +460,30 @@ export function BuscaProduto({
               ))}
             </tbody>
           </table>
-          {termo.trim() && lista.length === 0 && <p className="vazio">Nada encontrado.</p>}
+          {termo.trim() && lista.length === 0 && <p className="vazio">Nada encontrado. F2 cadastra o produto.</p>}
         </div>
-        <p className="dica">↑ ↓ escolhe · Enter adiciona · Esc fecha</p>
+        <div className="acoes">
+          <p className="dica">↑ ↓ escolhe · Enter adiciona · Esc fecha</p>
+          <span className="espaco" />
+          <button className="secundario" onClick={() => setNovo(true)}>
+            <kbd>F2</kbd> Novo produto
+          </button>
+        </div>
       </div>
+      {novo && (
+        <FormProduto
+          produto={null}
+          sugestao={sugestao}
+          onFechar={(p) => {
+            setNovo(false)
+            if (p) onEscolher(p)
+          }}
+          onAbrirExistente={(p) => {
+            setNovo(false)
+            onEscolher(p)
+          }}
+        />
+      )}
     </div>
   )
 }

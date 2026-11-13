@@ -176,6 +176,19 @@ describe('fiado', () => {
     expect(() => definirAtivoCliente(db, clienteId, false)).toThrow(/ainda deve/)
   })
 
+  it('cliente antes do primeiro item: escolher o cliente abre a venda', () => {
+    expect(() => definirClienteVenda(db, null)).toThrow(/Nenhuma venda/)
+    const v = definirClienteVenda(db, clienteId)
+    expect(v.status).toBe('aberta')
+    expect(v.clienteId).toBe(clienteId)
+    expect(v.itens).toEqual([])
+    expect(v.caixaId).toBe(caixaAberto(db)!.id)
+    adicionarProduto(db, produtoId, 2000)
+    const comItem = adicionarPagamento(db, 'fiado', 2000)
+    expect(comItem.id).toBe(v.id)
+    expect(finalizarVenda(db).clienteId).toBe(clienteId)
+  })
+
   it('cobrança por WhatsApp com saldo, compras em aberto e chave Pix', () => {
     definirConfig(db, 'loja.nome', 'Mercadinho do Zé')
     definirConfig(db, 'pix', JSON.stringify({ chave: 'pix@mercadinho.com', nome: 'ZE', cidade: 'SAO PAULO' }))

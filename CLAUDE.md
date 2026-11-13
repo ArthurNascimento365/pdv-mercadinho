@@ -67,6 +67,9 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   `dist/PDV Mercadinho Setup 0.1.18.exe` (12/11/2026). 327 testes (29 arquivos).
 - **13/11 — cupom do fiado:** sai a linha grande "NO FIADO" e entra "Saldo anterior" acima de
   "Saldo devedor após a compra" — no instalador `dist/PDV Mercadinho Setup 0.1.19.exe` (13/11/2026).
+- **13/11 — cliente antes do primeiro item** (F3 com a venda vazia já abre a venda), **cadastro
+  dentro das buscas** (F2 "Novo cliente" na busca do cliente, F2 "Novo produto" na busca de
+  produto; o que foi digitado entra no cadastro) e **nome do cliente em maiúsculas**. Ainda sem instalador.
 
 ### Em andamento
 
@@ -210,7 +213,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   então o caixa o resolve igual (digita + Enter). Produto KG mantém EAN e "Código na balança"
   separados. A lista mostra "int. N" (UN) ou "bal. N" (KG); CSV aceita a coluna `codigo_interno`.
 - Descrição de produto em maiúsculas: o formulário converte ao digitar (`maiusculas` em
-  FormProduto.tsx); a importação CSV grava como vier na planilha.
+  FormProduto.tsx); a importação CSV grava como vier na planilha. Nome do cliente do fiado também
+  (FormCliente converte ao digitar e ao abrir).
 - Produto nunca é apagado, só inativado (vendas antigas apontam para ele).
 - EAN precisa ter dígito verificador válido. Etiqueta de balança: EAN-13 com prefixo 2,
   formato (dígitos do código 4/5/6, preço ou peso) em `configuracoes` (`balanca.*`).
@@ -226,7 +230,10 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   ao subtotal (reduz sozinho se itens forem cancelados).
 - Caixa (tela Vender): Enter lança o código; `3*código` multiplica; PLU de até 6 dígitos
   digitado à mão pede o peso; F2 busca, F5/F6 desconto item/venda, F1 acréscimo na venda, F7/F8 cancela item/venda,
-  F9 cancela a última venda finalizada. Pagamento: Enter com o campo de código vazio (e itens na
+  F9 cancela a última venda finalizada. F3 vale antes do primeiro item:  abre a
+  venda (vazia, com o cliente). As buscas do F2 (produto) e do F3 (cliente) têm botão/tecla F2 de
+  cadastro: o produto novo entra direto na venda (KG pede o peso) e o cliente novo fica na venda;
+  o termo digitado vira descrição/nome (ou código, se só números). Pagamento: Enter com o campo de código vazio (e itens na
   venda) ou F10; dentro dele F1–F5 escolhe a forma, Enter lança e, com tudo pago, finaliza.
   Pagamento dividido: lança uma parte numa forma (Enter), escolhe a próxima para o restante;
   botões Restante/Metade, lista de pagamentos lançados com "remover" em cada um (F8 = último).
