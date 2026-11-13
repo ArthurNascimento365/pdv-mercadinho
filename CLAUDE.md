@@ -66,7 +66,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   fiado, saldo após a compra, assinatura); "Total recebido" não conta o fiado — no instalador
   `dist/PDV Mercadinho Setup 0.1.18.exe` (12/11/2026). 327 testes (29 arquivos).
 - **13/11 — cupom do fiado:** sai a linha grande "NO FIADO" e entra "Saldo anterior" acima de
-  "Saldo devedor após a compra". Ainda sem instalador.
+  "Saldo devedor após a compra" — no instalador `dist/PDV Mercadinho Setup 0.1.19.exe` (13/11/2026).
 
 ### Em andamento
 
@@ -119,7 +119,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.19.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.20.
 4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
