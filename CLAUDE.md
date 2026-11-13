@@ -71,7 +71,10 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   dentro das buscas** (F2 "Novo cliente" na busca do cliente, F2 "Novo produto" na busca de
   produto; o que foi digitado entra no cadastro) e **nome do cliente em maiúsculas** — no instalador `dist/PDV Mercadinho Setup 0.1.20.exe` (13/11/2026). 328 testes (29 arquivos).
 - **13/11 — produto de preço livre** (ex.: "DIVERSOS"): o caixa digita o valor na venda; não controla
-  estoque. Schema do banco na versão 12. 331 testes (29 arquivos). Ainda sem instalador.
+  estoque. Schema do banco na versão 12. Ainda sem instalador.
+- **13/11 — controle de estoque opcional** (Configurações → Estoque): desligado, as telas escondem
+  estoque, mínimo, compras, validade e "sem giro"; o saldo segue contando por baixo. 332 testes
+  (29 arquivos). Ainda sem instalador.
 
 ### Em andamento
 
@@ -272,6 +275,12 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   esperado = fundo + dinheiro das vendas (menos troco) + suprimentos − sangrias. Fechamento é
   cego (contagem de todas as formas antes de ver o esperado) e grava esperado × contado em
   `caixa_fechamento`. Não fecha com venda aberta; venda de caixa fechado não se cancela.
+- Controle de estoque (chave `estoque.controle`, ligado por padrão; `controleEstoqueLigado` em
+  repos/estoque.ts, hook `useControleEstoque` no renderer): desligado, somem a coluna e os campos de
+  estoque (Produtos/FormProduto, que mantém o valor ao salvar), os cartões de mínimo e validade do
+  Início, as abas No mínimo/Validade/Lista de compras (fica só Entradas) e o relatório "Sem giro".
+  As regras não mudam: venda, cancelamento e entrada seguem movimentando o saldo. Ao religar,
+  Configurações avisa para conferir o estoque.
 - Estoque: nunca faça UPDATE direto em `estoque_atual`; use `movimentarEstoque` (tipos:
   inicial, ajuste, venda, cancelamento_venda, entrada). "No mínimo" = mínimo > 0 e atual ≤ mínimo
   (`noEstoqueMinimo` / `produtosNoMinimo`).

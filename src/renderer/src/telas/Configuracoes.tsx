@@ -26,6 +26,9 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
   const [pix, setPix] = useState<ConfigPix | null>(null)
   const [diasAtraso, setDiasAtraso] = useState('30')
   const [controleCaixa, setControleCaixa] = useState(true)
+  const [controleEstoque, setControleEstoque] = useState(true)
+  /** Como estava ao abrir a tela: religar o estoque pede uma conferência. */
+  const [estoqueAntes, setEstoqueAntes] = useState(true)
   const [percentualPrazo, setPercentualPrazo] = useState('0')
   const [perguntarTabela, setPerguntarTabela] = useState(true)
   const [modalFiado, setModalFiado] = useState(false)
@@ -41,10 +44,13 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
       window.pdv.pix.obterConfig(),
       window.pdv.config.obter('fiado.dias_atraso'),
       window.pdv.caixa.controleLigado(),
-      window.pdv.precos.configAPrazo()
+      window.pdv.precos.configAPrazo(),
+      window.pdv.estoque.controleLigado()
     ])
-      .then(([nome, f, hw, p, dias, controle, prazo]) => {
+      .then(([nome, f, hw, p, dias, controle, prazo, estoque]) => {
         setControleCaixa(controle)
+        setControleEstoque(estoque)
+        setEstoqueAntes(estoque)
         setPercentualPrazo(percentualParaTexto(prazo.percentual))
         setPerguntarTabela(prazo.perguntar)
         setNomeLoja(nome ?? '')
@@ -70,6 +76,7 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
       await window.pdv.config.definir('loja.nome', nomeLoja.trim())
       await window.pdv.config.definir('fiado.dias_atraso', String(dias))
       await window.pdv.caixa.definirControle(controleCaixa)
+      await window.pdv.estoque.definirControle(controleEstoque)
       const percentual = lerPercentual(percentualPrazo || '0')
       if (percentual === null) throw new Error('Percentual a prazo inválido (ex.: 8 ou 7,5)')
       await window.pdv.precos.salvarConfigAPrazo({ percentual, perguntar: perguntarTabela })
@@ -77,7 +84,12 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
       await window.pdv.balanca.definirFormato(formato)
       setImpressora(await window.pdv.hardware.salvarImpressora(impressora))
       setBalancaSerial(await window.pdv.hardware.salvarBalanca(balancaSerial))
-      setAviso('Configurações salvas.')
+      setAviso(
+        controleEstoque && !estoqueAntes
+          ? 'Configurações salvas. Controle de estoque ligado: confira o estoque dos produtos (os números podem estar desatualizados).'
+          : 'Configurações salvas.'
+      )
+      setEstoqueAntes(controleEstoque)
       return true
     } catch (e) {
       setErro(mensagemErro(e))
@@ -138,6 +150,19 @@ export function Configuracoes({ onVoltar }: { onVoltar: () => void }): React.JSX
           {controleCaixa
             ? 'Ligado: para vender, alguém abre o caixa (F4) com o nome do operador e o fundo de troco, e no fim do turno fecha com a contagem.'
             : 'Desligado: para a loja em que o dono é o único operador. Vende direto, sem abrir nem fechar o caixa; o PDV mantém um caixa aberto em nome de "Dono". Sangria e fechamento continuam disponíveis no F4, se quiser usar.'}
+        </p>
+      </section>
+
+      <section className="secao">
+        <h3>Estoque</h3>
+        <label className="opcao">
+          <input type="checkbox" checked={controleEstoque} onChange={(e) => setControleEstoque(e.target.checked)} />
+          Controlar estoque
+        </label>
+        <p className="dica">
+          {controleEstoque
+            ? 'Ligado: o cadastro e a lista de produtos mostram o estoque; a tela inicial avisa o que está no mínimo e a validade; Estoque e entrada tem a lista de compras e Relatórios o "sem giro".'
+            : 'Desligado: para a loja que não controla estoque. Somem os campos e avisos de estoque, a lista de compras, a validade e o relatório "sem giro". A entrada de NF-e continua (atualiza o custo). O PDV segue contando por baixo: se religar, confira o estoque antes de confiar nos números.'}
         </p>
       </section>
 

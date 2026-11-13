@@ -3,7 +3,7 @@ import { formatarMoeda, quantidadeParaTexto } from '@shared/dinheiro'
 import { noEstoqueMinimo } from '@shared/estoque'
 import type { Produto } from '@shared/produtos'
 import { Icone } from '../componentes/Icone'
-import { mensagemErro, useTeclas } from '../util'
+import { mensagemErro, useControleEstoque, useTeclas } from '../util'
 import { hojeLocal, precoTabela, promocaoAtiva } from '@shared/precos'
 import { Etiquetas } from './Etiquetas'
 import { FormProduto } from './FormProduto'
@@ -12,6 +12,7 @@ import { ImportarCsv } from './ImportarCsv'
 export function Produtos({ onVoltar }: { onVoltar: () => void }): React.JSX.Element {
   const [termo, setTermo] = useState('')
   const [incluirInativos, setIncluirInativos] = useState(false)
+  const controleEstoque = useControleEstoque() !== false
   const [lista, setLista] = useState<Produto[]>([])
   const [selecionado, setSelecionado] = useState(0)
   const [editando, setEditando] = useState<Produto | 'novo' | null>(null)
@@ -122,7 +123,7 @@ export function Produtos({ onVoltar }: { onVoltar: () => void }): React.JSX.Elem
               <th>Categoria</th>
               <th>Un</th>
               <th className="num">Preço</th>
-              <th className="num">Estoque</th>
+              {controleEstoque && <th className="num">Estoque</th>}
             </tr>
           </thead>
           <tbody ref={tabela}>
@@ -146,9 +147,11 @@ export function Produtos({ onVoltar }: { onVoltar: () => void }): React.JSX.Elem
                 <td>{p.categoria ?? ''}</td>
                 <td>{p.unidade}</td>
                 <td className="num">{p.precoLivre ? 'livre' : formatarMoeda(precoTabela(p, hojeLocal()).preco)}</td>
-                <td className={`num ${noEstoqueMinimo(p) ? 'baixo' : ''}`}>
-                  {p.precoLivre ? '—' : quantidadeParaTexto(p.estoqueAtual, p.unidade)}
-                </td>
+                {controleEstoque && (
+                  <td className={`num ${noEstoqueMinimo(p) ? 'baixo' : ''}`}>
+                    {p.precoLivre ? '—' : quantidadeParaTexto(p.estoqueAtual, p.unidade)}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

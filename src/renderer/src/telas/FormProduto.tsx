@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { centavosParaTexto, lerMoeda, lerQuantidade, quantidadeParaTexto } from '@shared/dinheiro'
 import { NOMES_BASES_OPEN_FACTS, type Categoria, type Produto, type ProdutoEntrada, type Unidade } from '@shared/produtos'
-import { mensagemErro, textoMargem, useTeclas } from '../util'
+import { mensagemErro, textoMargem, useControleEstoque, useTeclas } from '../util'
 
 interface Props {
   produto: Produto | null
@@ -182,6 +182,8 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
     }
   })
   const [categorias, setCategorias] = useState<Categoria[]>([])
+  // Sem controle de estoque os campos somem (o valor carregado é mantido ao salvar).
+  const controleEstoque = useControleEstoque() !== false
   const [erro, setErro] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [existente, setExistente] = useState<Produto | null>(null)
@@ -448,7 +450,7 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
             </datalist>
           </label>
 
-          {!campos.precoLivre && (
+          {!campos.precoLivre && controleEstoque && (
             <>
               <label>
                 Estoque atual ({campos.unidade === 'KG' ? 'kg' : 'un'})

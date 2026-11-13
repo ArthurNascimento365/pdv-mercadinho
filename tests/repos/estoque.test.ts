@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { abrirBanco, type Banco } from '../../src/main/db/conexao'
 import { abrirCaixa } from '../../src/main/caixa/caixa'
-import { movimentosDoProduto } from '../../src/main/repos/estoque'
+import { controleEstoqueLigado, definirControleEstoque, movimentosDoProduto } from '../../src/main/repos/estoque'
 import { atualizarProduto, contarNoMinimo, criarProduto, produtosNoMinimo } from '../../src/main/repos/produtos'
 import { adicionarPagamento, adicionarProduto, cancelarVendaFinalizada, finalizarVenda } from '../../src/main/vendas/vendas'
 import { entrada } from '../ajuda'
@@ -46,5 +46,20 @@ describe('estoque', () => {
     criarProduto(db, entrada({ descricao: 'Sem mínimo', estoqueAtual: 0, estoqueMinimo: 0 }))
     expect(produtosNoMinimo(db).map((p) => p.descricao)).toEqual(['Zerado', 'No limite'])
     expect(contarNoMinimo(db)).toBe(2)
+  })
+
+  it('controle de estoque: ligado por padrão; desligado, a venda continua contando por baixo', () => {
+    expect(controleEstoqueLigado(db)).toBe(true)
+    definirControleEstoque(db, false)
+    expect(controleEstoqueLigado(db)).toBe(false)
+    expect(() => definirControleEstoque(db, 'nao')).toThrow(/inválida/)
+    const p = criarProduto(db, entrada({ precoVenda: 500, estoqueAtual: 2000 }))
+    abrirCaixa(db, 'Maria', 0)
+    adicionarProduto(db, p.id, 3000)
+    adicionarPagamento(db, 'dinheiro', 1500)
+    finalizarVenda(db)
+    expect(movimentosDoProduto(db, p.id)[0]).toMatchObject({ tipo: 'venda', quantidade: -3000, saldo: -1000 })
+    definirControleEstoque(db, true)
+    expect(controleEstoqueLigado(db)).toBe(true)
   })
 })

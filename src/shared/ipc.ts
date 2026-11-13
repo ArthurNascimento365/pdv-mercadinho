@@ -119,6 +119,8 @@ export interface CanaisIpc {
 
   'estoque:noMinimo': { args: []; retorno: Produto[] }
   'estoque:contarNoMinimo': { args: []; retorno: number }
+  'estoque:controleLigado': { args: []; retorno: boolean }
+  'estoque:definirControle': { args: [ligado: boolean]; retorno: void }
   'estoque:movimentos': { args: [produtoId: number]; retorno: MovimentoEstoque[] }
 
   'entradas:analisarXml': { args: []; retorno: PreviaEntrada | null }
@@ -260,6 +262,9 @@ export interface PdvApi {
     noMinimo(): Promise<Produto[]>
     contarNoMinimo(): Promise<number>
     movimentos(produtoId: number): Promise<MovimentoEstoque[]>
+    /** Configurações → Estoque: desligado, as telas não mostram estoque (o saldo segue contando). */
+    controleLigado(): Promise<boolean>
+    definirControle(ligado: boolean): Promise<void>
   }
   entradas: {
     /** Abre o seletor de arquivo; null se o operador cancelou. */

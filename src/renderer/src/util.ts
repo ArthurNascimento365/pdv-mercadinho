@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 function textoErro(erro: unknown): string {
   const texto = erro instanceof Error ? erro.message : String(erro)
@@ -13,6 +13,21 @@ export function mensagemErro(erro: unknown): string {
 /** A operação pode ser liberada com a senha do gerente. */
 export function exigeGerente(erro: unknown): boolean {
   return textoErro(erro).startsWith('[gerente] ')
+}
+
+/**
+ * Controle de estoque (Configurações → Estoque). Desligado, as telas não mostram estoque,
+ * mínimo, compras, validade nem "sem giro". null enquanto a resposta não chega.
+ */
+export function useControleEstoque(): boolean | null {
+  const [ligado, setLigado] = useState<boolean | null>(null)
+  useEffect(() => {
+    window.pdv.estoque
+      .controleLigado()
+      .then(setLigado)
+      .catch(() => setLigado(true))
+  }, [])
+  return ligado
 }
 
 type MapaTeclas = Record<string, (e: KeyboardEvent) => void>

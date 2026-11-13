@@ -71,7 +71,9 @@ const api: PdvApi = {
   estoque: {
     noMinimo: () => invocar('estoque:noMinimo'),
     contarNoMinimo: () => invocar('estoque:contarNoMinimo'),
-    movimentos: (produtoId) => invocar('estoque:movimentos', produtoId)
+    movimentos: (produtoId) => invocar('estoque:movimentos', produtoId),
+    controleLigado: () => invocar('estoque:controleLigado'),
+    definirControle: (ligado) => invocar('estoque:definirControle', ligado)
   },
   entradas: {
     analisarXml: () => invocar('entradas:analisarXml'),

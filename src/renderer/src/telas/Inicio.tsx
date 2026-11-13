@@ -99,11 +99,17 @@ export function Inicio({ onAbrir }: { onAbrir: (tela: Tela) => void }): React.JS
       window.pdv.caixa.paraVender(),
       window.pdv.estoque.contarNoMinimo(),
       window.pdv.backup.estado(),
-      window.pdv.validade.alertas()
+      window.pdv.validade.alertas(),
+      window.pdv.estoque.controleLigado()
     ])
-      .then(([i, c, n, b, v]) => {
+      .then(([i, c, n, b, v, estoque]) => {
         setInfo(i)
-        setStatus([statusCaixa(c), statusBackup(b.ultimo), statusEstoque(n), statusValidade(v)])
+        // Sem controle de estoque, os cartões de estoque mínimo e de validade não aparecem.
+        setStatus([
+          statusCaixa(c),
+          statusBackup(b.ultimo),
+          ...(estoque ? [statusEstoque(n), statusValidade(v)] : [])
+        ])
       })
       .catch((e: unknown) => setErro(mensagemErro(e)))
   }, [])

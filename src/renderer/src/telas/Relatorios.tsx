@@ -5,7 +5,7 @@ import { periodoPadrao, type Periodo, type VendaConsulta } from '@shared/relator
 import { FORMAS_PAGAMENTO } from '@shared/vendas'
 import { Confirmar } from '../componentes/Modais'
 import { PreviaCupom } from '../componentes/PreviaCupom'
-import { mensagemErro, useTeclas } from '../util'
+import { mensagemErro, useControleEstoque, useTeclas } from '../util'
 
 type Aba = 'vendas' | 'fechamentos' | 'margem' | 'abc' | 'fiado' | 'semGiro' | 'consulta'
 
@@ -187,6 +187,9 @@ async function montar(aba: Aba, periodo: Periodo, numero: number | null): Promis
 
 export function Relatorios({ onVoltar }: { onVoltar: () => void }): React.JSX.Element {
   const [aba, setAba] = useState<Aba>('vendas')
+  // "Sem giro" depende do estoque: some quando o controle de estoque está desligado.
+  const controleEstoque = useControleEstoque()
+  const abas = controleEstoque === false ? ABAS.filter((a) => a.aba !== 'semGiro') : ABAS
   const [periodo, setPeriodo] = useState<Periodo>(() => periodoPadrao('hoje'))
   const [tabela, setTabela] = useState<Tabela | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -257,7 +260,7 @@ export function Relatorios({ onVoltar }: { onVoltar: () => void }): React.JSX.El
     {
       Escape: onVoltar,
       F10: () => void exportar(),
-      ...Object.fromEntries(ABAS.map((a) => [a.tecla, () => setAba(a.aba)])),
+      ...Object.fromEntries(abas.map((a) => [a.tecla, () => setAba(a.aba)])),
       ...(aba === 'consulta'
         ? {
             ArrowUp: () => setSelecionada((s) => Math.max(0, s - 1)),
@@ -277,7 +280,7 @@ export function Relatorios({ onVoltar }: { onVoltar: () => void }): React.JSX.El
     <main className="pagina">
       <div className="barra">
         <h2>Relatórios</h2>
-        {ABAS.map((a) => (
+        {abas.map((a) => (
           <button key={a.aba} className={a.aba === aba ? 'primario' : ''} onClick={() => setAba(a.aba)}>
             <kbd>{a.tecla}</kbd> {a.nome}
           </button>

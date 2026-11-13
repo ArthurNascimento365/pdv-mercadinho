@@ -11,7 +11,7 @@ import {
 } from '@shared/estoque'
 import type { Produto } from '@shared/produtos'
 import { BuscaProduto } from '../componentes/Modais'
-import { mensagemErro, useTeclas } from '../util'
+import { mensagemErro, useControleEstoque, useTeclas } from '../util'
 import { EntradaNfe } from './EntradaNfe'
 
 export type AbaEstoque = 'minimo' | 'entradas' | 'validade' | 'compras'
@@ -36,6 +36,12 @@ function situacaoValidade(dias: number): { texto: string; classe: string } {
 
 export function Estoque({ onVoltar, abaInicial = 'minimo' }: { onVoltar: () => void; abaInicial?: AbaEstoque }): React.JSX.Element {
   const [aba, setAba] = useState<AbaEstoque>(abaInicial)
+  // Sem controle de estoque, fica só a entrada de mercadoria (custo e códigos do fornecedor).
+  const controle = useControleEstoque()
+  const abas = controle === false ? ABAS.filter((a) => a.aba === 'entradas') : ABAS
+  useEffect(() => {
+    if (controle === false) setAba('entradas')
+  }, [controle])
   const [minimo, setMinimo] = useState<Produto[]>([])
   const [entradas, setEntradas] = useState<ResumoEntrada[]>([])
   const [lotes, setLotes] = useState<LoteEmEstoque[]>([])
@@ -118,7 +124,7 @@ export function Estoque({ onVoltar, abaInicial = 'minimo' }: { onVoltar: () => v
       Escape: onVoltar,
       F4: () => void importarXml(),
       F5: () => setManual(true),
-      ...Object.fromEntries(ABAS.map((a) => [a.tecla, () => setAba(a.aba)])),
+      ...Object.fromEntries(abas.map((a) => [a.tecla, () => setAba(a.aba)])),
       F10: () => aba === 'compras' && void pdf(),
       F11: () => aba === 'compras' && void whatsapp(),
       ArrowDown: () => setSel((s) => Math.min(s + 1, tamanho - 1)),
@@ -136,7 +142,7 @@ export function Estoque({ onVoltar, abaInicial = 'minimo' }: { onVoltar: () => v
       <div className="barra">
         <h2>Estoque e entrada</h2>
         <div className="abas" role="tablist">
-          {ABAS.map((a) => (
+          {abas.map((a) => (
             <button
               key={a.aba}
               role="tab"

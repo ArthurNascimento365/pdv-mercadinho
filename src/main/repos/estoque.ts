@@ -1,6 +1,22 @@
 import type { Milesimos } from '@shared/dinheiro'
 import type { MovimentoEstoque, TipoMovimentoEstoque } from '@shared/estoque'
 import type { Banco } from '../db/conexao'
+import { ErroNegocio } from '../erros'
+import { definirConfig, obterConfig } from './configuracoes'
+
+/**
+ * Controle de estoque (Configurações → Estoque, chave `estoque.controle`): ligado por padrão.
+ * Desligado, as telas deixam de mostrar estoque, mínimo, lista de compras, validade e "sem giro",
+ * mas vendas e entradas continuam movimentando o saldo por baixo (religar não perde o histórico).
+ */
+export function controleEstoqueLigado(db: Banco): boolean {
+  return obterConfig(db, 'estoque.controle') !== 'desligado'
+}
+
+export function definirControleEstoque(db: Banco, ligado: unknown): void {
+  if (typeof ligado !== 'boolean') throw new ErroNegocio('Opção de controle de estoque inválida')
+  definirConfig(db, 'estoque.controle', ligado ? 'ligado' : 'desligado')
+}
 
 /**
  * Única porta de mudança de estoque: atualiza o saldo e registra o movimento.

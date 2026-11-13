@@ -69,7 +69,7 @@ import {
   type ServicoImpressao
 } from './impressao/servico'
 import { abrirCanalBalanca, listarPortasSerial } from './impressao/transportes'
-import { movimentosDoProduto } from './repos/estoque'
+import { controleEstoqueLigado, definirControleEstoque, movimentosDoProduto } from './repos/estoque'
 import type { Banco } from './db/conexao'
 import { versaoAtual } from './db/migracoes'
 import { ErroNegocio, exigirId, exigirTexto } from './erros'
@@ -313,6 +313,8 @@ export function registrarIpc({ db, caminhoBanco, impressao, backup }: ContextoIp
   tratar('estoque:noMinimo', () => produtosNoMinimo(db))
   tratar('estoque:contarNoMinimo', () => contarNoMinimo(db))
   tratar('estoque:movimentos', (produtoId) => movimentosDoProduto(db, exigirId(produtoId)))
+  tratar('estoque:controleLigado', () => controleEstoqueLigado(db))
+  tratar('estoque:definirControle', (ligado) => definirControleEstoque(db, ligado))
 
   // Entrada por XML da NF-e: analisa → operador confere/vincula → confirma.
   let notaPendente: { id: string; nota: NotaFiscal } | null = null
