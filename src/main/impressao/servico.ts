@@ -149,10 +149,10 @@ export class ServicoImpressao {
   private fiadoDaVenda(vendaId: number): FiadoNoCupom | null {
     const compra = this.db
       .prepare(
-        `SELECT l.id, l.cliente_id, c.nome FROM fiado_lancamentos l JOIN clientes c ON c.id = l.cliente_id
+        `SELECT l.id, l.cliente_id, l.valor, c.nome FROM fiado_lancamentos l JOIN clientes c ON c.id = l.cliente_id
          WHERE l.venda_id = ? AND l.tipo = 'compra'`
       )
-      .get(vendaId) as { id: number; cliente_id: number; nome: string } | undefined
+      .get(vendaId) as { id: number; cliente_id: number; valor: number; nome: string } | undefined
     if (!compra) return null
     const { saldo } = this.db
       .prepare(
@@ -160,7 +160,7 @@ export class ServicoImpressao {
          FROM fiado_lancamentos WHERE cliente_id = ? AND id <= ?`
       )
       .get(compra.cliente_id, compra.id) as { saldo: number }
-    return { cliente: compra.nome, saldoApos: saldo }
+    return { cliente: compra.nome, saldoAntes: saldo - compra.valor, saldoApos: saldo }
   }
 
   imprimirVenda(vendaId: unknown): Promise<void> {

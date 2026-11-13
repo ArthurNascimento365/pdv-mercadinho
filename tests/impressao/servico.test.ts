@@ -280,7 +280,11 @@ describe('serviço de impressão', () => {
     const l1 = linhas(primeira.id)
     const l2 = linhas(segunda.id)
     expect(l2.findIndex((x) => x.startsWith('COMPRA NO FIADO'))).toBeGreaterThan(l2.findIndex((x) => x.startsWith('TOTAL')))
-    expect(l2.find((x) => x.startsWith('NO FIADO'))).toMatch(/R\$\s10,00$/)
+    // Sem a linha grande "NO FIADO"; o saldo anterior fica logo acima do saldo após a compra.
+    expect(l2.some((x) => x.startsWith('NO FIADO'))).toBe(false)
+    expect(l1.find((x) => x.startsWith('Saldo anterior'))).toMatch(/R\$\s0,00$/)
+    expect(l2.find((x) => x.startsWith('Saldo anterior'))).toMatch(/R\$\s7,49$/)
+    expect(l2.findIndex((x) => x.startsWith('Saldo anterior'))).toBe(l2.findIndex((x) => x.startsWith('Saldo devedor após')) - 1)
     // "Total recebido" só com o que entrou de verdade (o fiado fica de fora).
     expect(l2.find((x) => x.startsWith('Total recebido'))).toMatch(/4,98$/)
     expect(l1.some((x) => x.startsWith('Total recebido'))).toBe(false)

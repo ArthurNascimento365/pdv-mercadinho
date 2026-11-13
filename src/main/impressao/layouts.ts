@@ -43,6 +43,8 @@ function cabecalho(loja: ContextoLoja): Documento {
 /** Parte do fiado no cupom: cliente e saldo dele logo depois desta compra (vale também na reimpressão). */
 export interface FiadoNoCupom {
   cliente: string
+  /** Saldo devedor antes desta compra. */
+  saldoAntes: number
   saldoApos: number
 }
 
@@ -110,11 +112,10 @@ export function cupomVenda(
   const itens = venda.itens.filter((x) => !x.cancelado).length
   doc.push({ tipo: 'texto', texto: `${itens} ${itens === 1 ? 'item' : 'itens'}` }, { tipo: 'separador' })
   if (fiado) {
-    const noFiado = venda.pagamentos.filter((p) => p.forma === 'fiado').reduce((s, p) => s + p.valor, 0)
     doc.push(
       { tipo: 'texto', texto: 'COMPRA NO FIADO', alinhamento: 'centro', negrito: true },
       { tipo: 'texto', texto: `Cliente: ${fiado.cliente}`, negrito: true },
-      { tipo: 'colunas', esquerda: 'NO FIADO', direita: real(noFiado), negrito: true, grande: true },
+      { tipo: 'colunas', esquerda: 'Saldo anterior', direita: real(fiado.saldoAntes) },
       { tipo: 'colunas', esquerda: 'Saldo devedor após a compra', direita: real(fiado.saldoApos), negrito: true },
       { tipo: 'espaco' },
       { tipo: 'texto', texto: 'Reconheço a dívida acima.' },

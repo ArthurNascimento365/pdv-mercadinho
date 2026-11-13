@@ -4,7 +4,7 @@ PDV desktop para mercadinho: venda 100% offline, cupom não fiscal.
 Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP e Diferenciais"
 (https://claude.ai/artifact/M4nBv2G4Nz6dUZS8yi7Uip).
 
-## Estado do projeto (atualizado em 12/11/2026)
+## Estado do projeto (atualizado em 13/11/2026)
 
 ### Concluído — MVP completo (fases 0 a 5 do roadmap)
 
@@ -65,6 +65,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - **12/11 — venda no fiado num papel só:** o cupom traz no fim a parte do fiado (cliente, valor no
   fiado, saldo após a compra, assinatura); "Total recebido" não conta o fiado — no instalador
   `dist/PDV Mercadinho Setup 0.1.18.exe` (12/11/2026). 327 testes (29 arquivos).
+- **13/11 — cupom do fiado:** sai a linha grande "NO FIADO" e entra "Saldo anterior" acima de
+  "Saldo devedor após a compra". Ainda sem instalador.
 
 ### Em andamento
 
@@ -276,8 +278,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   da dívida saem sempre** (pedido do usuário). A gaveta abre igual, o resultado traz
   `semCupomCliente` e a tela Vender avisa; F12/Consultar vendas imprimem o cupom.
   **Venda no fiado = um papel só** (pedido do usuário, 12/11): `cupomVenda(..., fiado)` acrescenta no
-  fim "COMPRA NO FIADO", cliente, NO FIADO, "Saldo devedor após a compra" (soma da caderneta até o
-  lançamento da compra, `fiadoDaVenda` em servico.ts — igual na reimpressão) e a linha de assinatura.
+  fim "COMPRA NO FIADO", cliente, "Saldo anterior" e "Saldo devedor após a compra" (sem a linha
+  "NO FIADO", pedido do usuário em 13/11; saldo = soma da caderneta até o lançamento da compra, `fiadoDaVenda` em servico.ts — igual na reimpressão) e a linha de assinatura.
   Sai sempre que houver impressora (ignora impressão automática e a opção do cliente). Não existe
   mais via separada. "Total recebido" no cupom exclui o fiado.
   Bloqueio (limite/atraso > `fiado.dias_atraso`) vem como `ErroNegocio(..., 'gerente')`; o IPC
