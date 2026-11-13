@@ -71,10 +71,11 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   dentro das buscas** (F2 "Novo cliente" na busca do cliente, F2 "Novo produto" na busca de
   produto; o que foi digitado entra no cadastro) e **nome do cliente em maiúsculas** — no instalador `dist/PDV Mercadinho Setup 0.1.20.exe` (13/11/2026). 328 testes (29 arquivos).
 - **13/11 — produto de preço livre** (ex.: "DIVERSOS"): o caixa digita o valor na venda; não controla
-  estoque. Schema do banco na versão 12. Ainda sem instalador.
+  estoque. Schema do banco na versão 12.
 - **13/11 — controle de estoque opcional** (Configurações → Estoque): desligado, as telas escondem
   estoque, mínimo, compras, validade e "sem giro"; o saldo segue contando por baixo. 332 testes
-  (29 arquivos). Ainda sem instalador.
+  (29 arquivos). Preço livre e controle de estoque no instalador
+  `dist/PDV Mercadinho Setup 0.1.21.exe` (13/11/2026).
 
 ### Em andamento
 
@@ -127,7 +128,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 1. Piloto na loja: imprimir a página de teste (acentos e colunas), testar a gaveta (pino 2/5),
    ler o peso da balança e importar uma NF-e real de fornecedor.
 2. Obter a decisão do usuário sobre a NF-e pelo DANFE (pasta de XMLs e/ou SEFAZ com A1).
-3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.21.
+3. Na próxima distribuição: ícone próprio (logo da loja) e versão 0.1.22.
 4. Pós-MVP do roadmap: sincronização com a nuvem, retaguarda no celular, Cosmos opcional, NFC-e.
 
 ## Stack
