@@ -158,7 +158,17 @@ function exigirQuantidade(produto: Produto, quantidade: unknown): Milesimos {
   return quantidade
 }
 
-function inserirItem(db: Banco, produto: Produto, quantidade: Milesimos, totalEtiqueta: Centavos | null): Venda {
+/**
+ * Lança o item. `totalEtiqueta`: etiqueta de balança (vale o total impresso). `precoLivre`: valor
+ * unitário digitado pelo caixa para produto de preço livre (cada lançamento vira uma linha).
+ */
+function inserirItem(
+  db: Banco,
+  produto: Produto,
+  quantidade: Milesimos,
+  totalEtiqueta: Centavos | null,
+  precoLivre: Centavos | null = null
+): Venda {
   return emTransacao(db, () => {
     const caixaId = exigirCaixaAberto(db)
     let vendaId = idVendaAberta(db)
@@ -168,14 +178,19 @@ function inserirItem(db: Banco, produto: Produto, quantidade: Milesimos, totalEt
       )
     }
     // Etiqueta de balança: o total impresso manda (a balança já precificou).
-    const tabela = totalEtiqueta !== null ? { preco: produto.precoVenda, tipo: 'etiqueta' as const } : precoTabela(produto, hojeLocal())
+    const tabela =
+      totalEtiqueta !== null
+        ? { preco: produto.precoVenda, tipo: 'etiqueta' as const }
+        : precoLivre !== null
+          ? { preco: precoLivre, tipo: 'normal' as const }
+          : precoTabela(produto, hojeLocal())
     const bruto = totalEtiqueta ?? totalItem(tabela.preco, quantidade)
     if (bruto === 0) throw new ErroNegocio('Quantidade pequena demais: o item sairia de graça')
 
     // Produto por unidade já na venda: soma na mesma linha (que mantém a tabela de preço).
     // KG (cada pesagem) e etiqueta de balança ficam em linhas separadas.
     const existente =
-      totalEtiqueta === null && produto.unidade === 'UN'
+      totalEtiqueta === null && produto.unidade === 'UN' && !produto.precoLivre
         ? (db
             .prepare(
               `SELECT id, quantidade, preco_unitario, desconto FROM venda_itens
@@ -246,6 +261,8 @@ function precosDoItem(
  * recebe o preço a prazo. Itens de etiqueta de balança não mudam.
  */
 function reprecificarProduto(db: Banco, vendaId: number, produto: Produto): void {
+  // Preço livre: vale o valor digitado em cada linha.
+  if (produto.precoLivre) return
   const itens = db
     .prepare(
       `SELECT id, quantidade, preco_tabela, desconto, tabela_preco FROM venda_itens
@@ -293,6 +310,7 @@ export function opcoesTabelaItem(db: Banco, itemId: unknown): OpcoesTabela | nul
   const item = itemDaVendaAberta(db, itemId)
   if (item.tipo_preco === 'etiqueta') return null
   const produto = obterProduto(db, item.produto_id)!
+  if (produto.precoLivre) return null
   const total = quantidadeDoProduto(db, item.venda_id, produto.id)
   const p = precosDoItem(produto, item.preco_tabela ?? item.preco_unitario, total, obterConfigAPrazo(db).percentual)
   return p.aPrazo === p.varejo ? null : { varejo: p.varejo, aPrazo: p.aPrazo }
@@ -306,8 +324,9 @@ export function alterarTabelaItem(db: Banco, itemId: unknown, tabela: unknown): 
     if (item.tipo_preco === 'etiqueta' && tabela !== 'varejo') {
       throw new ErroNegocio('Item de etiqueta de balança fica no preço impresso na etiqueta')
     }
-    db.prepare('UPDATE venda_itens SET tabela_preco = ? WHERE id = ?').run(tabela, item.id)
     const produto = obterProduto(db, item.produto_id)
+    if (produto?.precoLivre && tabela !== 'varejo') throw new ErroNegocio('Item de preço livre fica no valor digitado')
+    db.prepare('UPDATE venda_itens SET tabela_preco = ? WHERE id = ?').run(tabela, item.id)
     if (produto) reprecificarProduto(db, item.venda_id, produto)
     recalcular(db, item.venda_id)
     return obterVenda(db, item.venda_id)!
@@ -331,6 +350,7 @@ export function adicionarPorCodigo(
     if (quantidade !== null) throw new ErroNegocio('Multiplicador não vale para etiqueta de balança')
     return { tipo: 'adicionado', venda: inserirItem(db, r.produto, r.quantidade!, r.total) }
   }
+  if (r.produto.precoLivre) return { tipo: 'pedirPreco', produto: r.produto, quantidade: exigirQuantidade(r.produto, quantidade ?? 1000) }
   if (quantidade === null && r.produto.unidade === 'KG') return { tipo: 'pedirQuantidade', produto: r.produto }
   return {
     tipo: 'adicionado',
@@ -338,11 +358,22 @@ export function adicionarPorCodigo(
   }
 }
 
-/** Item escolhido pela busca por nome ou com peso informado à mão. */
-export function adicionarProduto(db: Banco, produtoId: unknown, quantidade: unknown): Venda {
+/**
+ * Item escolhido pela busca por nome ou com peso informado à mão. Produto de preço livre exige
+ * `valor` (preço unitário digitado pelo caixa).
+ */
+export function adicionarProduto(db: Banco, produtoId: unknown, quantidade: unknown, valor: unknown = null): Venda {
   const produto = obterProduto(db, exigirId(produtoId))
   if (!produto || !produto.ativo) throw new ErroNegocio('Produto não encontrado ou inativo')
-  return inserirItem(db, produto, exigirQuantidade(produto, quantidade), null)
+  let precoLivre: Centavos | null = null
+  if (produto.precoLivre) {
+    precoLivre = exigirCentavos(valor, 'Valor')
+    if (precoLivre === 0) throw new ErroNegocio('Informe o valor')
+    if (precoLivre > PAGAMENTO_MAXIMO) throw new ErroNegocio('Valor alto demais')
+  } else if (valor !== null && valor !== undefined) {
+    throw new ErroNegocio(`"${produto.descricao}" tem preço no cadastro`)
+  }
+  return inserirItem(db, produto, exigirQuantidade(produto, quantidade), null, precoLivre)
 }
 
 function exigirCentavos(valor: unknown, campo: string): Centavos {
@@ -533,13 +564,23 @@ export function removerPagamento(db: Banco, pagamentoId: unknown): Venda {
   })
 }
 
+/**
+ * Baixa (-1) o estoque dos itens da venda, menos os de preço livre (sem controle de estoque).
+ * O cancelamento (+1) devolve exatamente o que a venda baixou, mesmo que o cadastro tenha mudado.
+ */
 function moverEstoque(db: Banco, vendaId: number, sinal: 1 | -1): void {
-  const porProduto = db
-    .prepare(
-      `SELECT produto_id AS produtoId, SUM(quantidade) AS quantidade FROM venda_itens
-       WHERE venda_id = ? AND cancelado = 0 GROUP BY produto_id`
-    )
-    .all(vendaId) as unknown as { produtoId: number; quantidade: number }[]
+  const porProduto = (
+    sinal < 0
+      ? db.prepare(
+          `SELECT i.produto_id AS produtoId, SUM(i.quantidade) AS quantidade FROM venda_itens i
+           JOIN produtos p ON p.id = i.produto_id
+           WHERE i.venda_id = ? AND i.cancelado = 0 AND p.preco_livre = 0 GROUP BY i.produto_id`
+        )
+      : db.prepare(
+          `SELECT produto_id AS produtoId, -SUM(quantidade) AS quantidade FROM movimentos_estoque
+           WHERE venda_id = ? AND tipo = 'venda' GROUP BY produto_id`
+        )
+  ).all(vendaId) as unknown as { produtoId: number; quantidade: number }[]
   for (const { produtoId, quantidade } of porProduto) {
     movimentarEstoque(db, produtoId, sinal * quantidade, sinal < 0 ? 'venda' : 'cancelamento_venda', { vendaId })
   }

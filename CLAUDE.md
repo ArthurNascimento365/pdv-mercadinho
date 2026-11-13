@@ -70,6 +70,8 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
 - **13/11 — cliente antes do primeiro item** (F3 com a venda vazia já abre a venda), **cadastro
   dentro das buscas** (F2 "Novo cliente" na busca do cliente, F2 "Novo produto" na busca de
   produto; o que foi digitado entra no cadastro) e **nome do cliente em maiúsculas** — no instalador `dist/PDV Mercadinho Setup 0.1.20.exe` (13/11/2026). 328 testes (29 arquivos).
+- **13/11 — produto de preço livre** (ex.: "DIVERSOS"): o caixa digita o valor na venda; não controla
+  estoque. Schema do banco na versão 12. 331 testes (29 arquivos). Ainda sem instalador.
 
 ### Em andamento
 
@@ -216,6 +218,13 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   FormProduto.tsx); a importação CSV grava como vier na planilha. Nome do cliente do fiado também
   (FormCliente converte ao digitar e ao abrir).
 - Produto nunca é apagado, só inativado (vendas antigas apontam para ele).
+- Preço livre (`produtos.preco_livre`, migração 12; checkbox no FormProduto, só UN): o caixa digita o
+  valor. Código bipado/digitado devolve `pedirPreco` (com a quantidade do multiplicador) e a busca
+  também abre a janela (`Prompt` em Vender); `adicionarProduto(db, id, qtd, valor)` lança. Cada valor
+  é uma linha (não soma), sem tabela NORMAL, sem reprecificar. Cadastro grava `preco_venda = 1` (só
+  para o CHECK), estoque 0 e sem promoção; fora da baixa de estoque (`moverEstoque`) e das etiquetas
+  de gôndola. O cancelamento devolve o que a venda baixou (`movimentos_estoque` da venda). Na margem
+  entra "sem custo" se não tiver custo. Listas mostram "livre"/"preço livre". CSV não tem a coluna.
 - EAN precisa ter dígito verificador válido. Etiqueta de balança: EAN-13 com prefixo 2,
   formato (dígitos do código 4/5/6, preço ou peso) em `configuracoes` (`balanca.*`).
   EAN cadastrado tem prioridade sobre a leitura como etiqueta.

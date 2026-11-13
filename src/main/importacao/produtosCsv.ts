@@ -24,10 +24,10 @@ import {
 } from '../repos/produtos'
 import { lerCsv } from './csv'
 
-/** Colunas da planilha (promoção e atacarejo são cadastrados no formulário). */
+/** Colunas da planilha (promoção, atacarejo e preço livre são cadastrados no formulário). */
 type Campo = Exclude<
   keyof ProdutoEntrada,
-  'precoPromocional' | 'promocaoInicio' | 'promocaoFim' | 'atacadoQuantidade' | 'atacadoPreco'
+  'precoPromocional' | 'promocaoInicio' | 'promocaoFim' | 'atacadoQuantidade' | 'atacadoPreco' | 'precoLivre'
 >
 
 /** Nomes de coluna aceitos (comparados sem acento, maiúscula ou pontuação). */

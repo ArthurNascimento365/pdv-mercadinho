@@ -31,6 +31,8 @@ interface Campos {
   promocaoFim: string
   atacadoQuantidade: string
   atacadoPreco: string
+  /** O caixa digita o valor na venda (ex.: "DIVERSOS"); sem preço, estoque nem promoção. */
+  precoLivre: boolean
 }
 
 function camposDe(p: Produto | null): Campos {
@@ -50,7 +52,8 @@ function camposDe(p: Produto | null): Campos {
     promocaoInicio: p?.promocaoInicio ?? '',
     promocaoFim: p?.promocaoFim ?? '',
     atacadoQuantidade: p?.atacadoQuantidade != null ? quantidadeParaTexto(p.atacadoQuantidade, p.unidade) : '',
-    atacadoPreco: p?.atacadoPreco != null ? centavosParaTexto(p.atacadoPreco) : ''
+    atacadoPreco: p?.atacadoPreco != null ? centavosParaTexto(p.atacadoPreco) : '',
+    precoLivre: p?.precoLivre ?? false
   }
 }
 
@@ -86,6 +89,24 @@ function separarCodigo(c: Campos): { ean: string | null; codigoBalanca: number |
 
 /** Converte os campos digitados em entrada; lança Error com a mensagem para o operador. */
 function montarEntrada(c: Campos): ProdutoEntrada {
+  if (c.precoLivre) {
+    let precoCusto: number | null = null
+    if (c.precoCusto.trim() !== '') {
+      precoCusto = lerMoeda(c.precoCusto)
+      if (precoCusto === null) throw new Error('Preço de custo inválido')
+    }
+    return {
+      ...separarCodigo(c),
+      descricao: c.descricao,
+      unidade: 'UN',
+      precoVenda: 0,
+      precoCusto,
+      categoria: c.categoria.trim() || null,
+      estoqueAtual: 0,
+      estoqueMinimo: 0,
+      precoLivre: true
+    }
+  }
   const precoVenda = lerMoeda(c.precoVenda)
   if (precoVenda === null) throw new Error('Preço de venda inválido')
   let precoCusto: number | null = null
@@ -132,7 +153,8 @@ function montarEntrada(c: Campos): ProdutoEntrada {
     precoAPrazo,
     categoria: c.categoria.trim() || null,
     estoqueAtual,
-    estoqueMinimo
+    estoqueMinimo,
+    precoLivre: false
   }
 }
 
@@ -344,7 +366,11 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
 
           <label>
             Unidade
-            <select value={campos.unidade} onChange={(e) => definir('unidade', e.target.value as Unidade)}>
+            <select
+              value={campos.unidade}
+              disabled={campos.precoLivre}
+              onChange={(e) => definir('unidade', e.target.value as Unidade)}
+            >
               <option value="UN">UN (unidade)</option>
               <option value="KG">KG (pesado)</option>
             </select>
@@ -361,18 +387,28 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
               />
             </label>
           ) : (
-            <span />
+            <label className="opcao">
+              <input type="checkbox" checked={campos.precoLivre} onChange={(e) => definir('precoLivre', e.target.checked)} />
+              Preço livre (o caixa digita o valor na venda)
+            </label>
           )}
 
-          <label>
-            Preço de venda (R${campos.unidade === 'KG' ? '/kg' : ''})
-            <input
-              value={campos.precoVenda}
-              inputMode="decimal"
-              placeholder="0,00"
-              onChange={(e) => definir('precoVenda', e.target.value)}
-            />
-          </label>
+          {campos.precoLivre ? (
+            <p className="dica largo">
+              Preço livre: no caixa, o código (ou a busca) abre uma janela para digitar o valor. Serve para
+              "DIVERSOS", "HORTIFRUTI"... Não controla estoque e não tem promoção nem preço NORMAL.
+            </p>
+          ) : (
+            <label>
+              Preço de venda (R${campos.unidade === 'KG' ? '/kg' : ''})
+              <input
+                value={campos.precoVenda}
+                inputMode="decimal"
+                placeholder="0,00"
+                onChange={(e) => definir('precoVenda', e.target.value)}
+              />
+            </label>
+          )}
 
           <label>
             Preço de custo (R$)
@@ -385,15 +421,17 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
             {margem && <small>Margem: {margem}</small>}
           </label>
 
-          <label className="largo">
-            Preço NORMAL (R$)
-            <input
-              value={campos.precoAPrazo}
-              inputMode="decimal"
-              placeholder="opcional: sem ele, vale o preço de venda + o percentual da tabela NORMAL (Configurações)"
-              onChange={(e) => definir('precoAPrazo', e.target.value)}
-            />
-          </label>
+          {!campos.precoLivre && (
+            <label className="largo">
+              Preço NORMAL (R$)
+              <input
+                value={campos.precoAPrazo}
+                inputMode="decimal"
+                placeholder="opcional: sem ele, vale o preço de venda + o percentual da tabela NORMAL (Configurações)"
+                onChange={(e) => definir('precoAPrazo', e.target.value)}
+              />
+            </label>
+          )}
 
           <label className="largo">
             Categoria
@@ -410,69 +448,75 @@ export function FormProduto({ produto, sugestao, onFechar, onAbrirExistente }: P
             </datalist>
           </label>
 
-          <label>
-            Estoque atual ({campos.unidade === 'KG' ? 'kg' : 'un'})
-            <input
-              value={campos.estoqueAtual}
-              inputMode="decimal"
-              onChange={(e) => definir('estoqueAtual', e.target.value)}
-            />
-          </label>
+          {!campos.precoLivre && (
+            <>
+              <label>
+                Estoque atual ({campos.unidade === 'KG' ? 'kg' : 'un'})
+                <input
+                  value={campos.estoqueAtual}
+                  inputMode="decimal"
+                  onChange={(e) => definir('estoqueAtual', e.target.value)}
+                />
+              </label>
 
-          <label>
-            Estoque mínimo ({campos.unidade === 'KG' ? 'kg' : 'un'})
-            <input
-              value={campos.estoqueMinimo}
-              inputMode="decimal"
-              onChange={(e) => definir('estoqueMinimo', e.target.value)}
-            />
-          </label>
+              <label>
+                Estoque mínimo ({campos.unidade === 'KG' ? 'kg' : 'un'})
+                <input
+                  value={campos.estoqueMinimo}
+                  inputMode="decimal"
+                  onChange={(e) => definir('estoqueMinimo', e.target.value)}
+                />
+              </label>
+            </>
+          )}
         </div>
 
-        <details className="promocoes" open={!!(campos.precoPromocional || campos.atacadoQuantidade)}>
-          <summary>Promoção e atacarejo</summary>
-          <div className="grade grade-3">
-            <label>
-              Preço promocional (R$)
-              <input
-                value={campos.precoPromocional}
-                inputMode="decimal"
-                placeholder="sem promoção"
-                onChange={(e) => definir('precoPromocional', e.target.value)}
-              />
-            </label>
-            <label>
-              De
-              <input type="date" value={campos.promocaoInicio} onChange={(e) => definir('promocaoInicio', e.target.value)} />
-            </label>
-            <label>
-              Até
-              <input type="date" value={campos.promocaoFim} onChange={(e) => definir('promocaoFim', e.target.value)} />
-            </label>
-            <label>
-              Atacarejo: a partir de ({campos.unidade === 'KG' ? 'kg' : 'un'})
-              <input
-                value={campos.atacadoQuantidade}
-                inputMode="decimal"
-                placeholder="ex.: 3"
-                onChange={(e) => definir('atacadoQuantidade', e.target.value)}
-              />
-            </label>
-            <label>
-              preço de atacado (R$)
-              <input
-                value={campos.atacadoPreco}
-                inputMode="decimal"
-                placeholder="0,00"
-                onChange={(e) => definir('atacadoPreco', e.target.value)}
-              />
-            </label>
-            <p className="dica">
-              O atacado vale pela quantidade total do produto na venda (bipar 3 vezes conta como 3). Mudou preço,
-              promoção ou atacado: o produto entra na próxima leva de etiquetas de gôndola.
-            </p>
-          </div>
-        </details>
+        {!campos.precoLivre && (
+          <details className="promocoes" open={!!(campos.precoPromocional || campos.atacadoQuantidade)}>
+            <summary>Promoção e atacarejo</summary>
+            <div className="grade grade-3">
+              <label>
+                Preço promocional (R$)
+                <input
+                  value={campos.precoPromocional}
+                  inputMode="decimal"
+                  placeholder="sem promoção"
+                  onChange={(e) => definir('precoPromocional', e.target.value)}
+                />
+              </label>
+              <label>
+                De
+                <input type="date" value={campos.promocaoInicio} onChange={(e) => definir('promocaoInicio', e.target.value)} />
+              </label>
+              <label>
+                Até
+                <input type="date" value={campos.promocaoFim} onChange={(e) => definir('promocaoFim', e.target.value)} />
+              </label>
+              <label>
+                Atacarejo: a partir de ({campos.unidade === 'KG' ? 'kg' : 'un'})
+                <input
+                  value={campos.atacadoQuantidade}
+                  inputMode="decimal"
+                  placeholder="ex.: 3"
+                  onChange={(e) => definir('atacadoQuantidade', e.target.value)}
+                />
+              </label>
+              <label>
+                preço de atacado (R$)
+                <input
+                  value={campos.atacadoPreco}
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  onChange={(e) => definir('atacadoPreco', e.target.value)}
+                />
+              </label>
+              <p className="dica">
+                O atacado vale pela quantidade total do produto na venda (bipar 3 vezes conta como 3). Mudou preço,
+                promoção ou atacado: o produto entra na próxima leva de etiquetas de gôndola.
+              </p>
+            </div>
+          </details>
+        )}
 
         {erro && <p className="erro">{erro}</p>}
 

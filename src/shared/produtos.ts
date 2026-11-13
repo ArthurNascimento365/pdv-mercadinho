@@ -27,6 +27,8 @@ export interface Produto {
   atacadoPreco: Centavos | null
   /** Preço fixo na tabela "A prazo" (null = preço de varejo + percentual da configuração). */
   precoAPrazo: Centavos | null
+  /** Preço livre: o caixa digita o valor na venda (ex.: "DIVERSOS"); não controla estoque. */
+  precoLivre: boolean
 }
 
 /** O que o formulário (ou a importação) manda para criar/atualizar um produto. */
@@ -49,6 +51,8 @@ export interface ProdutoEntrada {
   atacadoPreco?: Centavos | null
   /** Preço fixo na tabela "A prazo"; ausente = usa o percentual da configuração. */
   precoAPrazo?: Centavos | null
+  /** Preço livre: o valor é digitado na venda. Ausente = false. */
+  precoLivre?: boolean
 }
 
 export interface Categoria {

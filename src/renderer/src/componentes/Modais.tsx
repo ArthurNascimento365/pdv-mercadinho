@@ -453,7 +453,7 @@ export function BuscaProduto({
                   <td>{p.descricao}</td>
                   <td>{p.unidade}</td>
                   <td className="num">
-                    {formatarMoeda(p.precoVenda)}
+                    {p.precoLivre ? 'preço livre' : formatarMoeda(p.precoVenda)}
                     {p.unidade === 'KG' ? '/kg' : ''}
                   </td>
                 </tr>

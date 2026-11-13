@@ -145,9 +145,9 @@ export function Produtos({ onVoltar }: { onVoltar: () => void }): React.JSX.Elem
                 </td>
                 <td>{p.categoria ?? ''}</td>
                 <td>{p.unidade}</td>
-                <td className="num">{formatarMoeda(precoTabela(p, hojeLocal()).preco)}</td>
+                <td className="num">{p.precoLivre ? 'livre' : formatarMoeda(precoTabela(p, hojeLocal()).preco)}</td>
                 <td className={`num ${noEstoqueMinimo(p) ? 'baixo' : ''}`}>
-                  {quantidadeParaTexto(p.estoqueAtual, p.unidade)}
+                  {p.precoLivre ? '—' : quantidadeParaTexto(p.estoqueAtual, p.unidade)}
                 </td>
               </tr>
             ))}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { centavosParaTexto, formatarMoeda, lerQuantidade, quantidadeParaTexto } from '@shared/dinheiro'
+import { centavosParaTexto, formatarMoeda, lerMoeda, lerQuantidade, quantidadeParaTexto } from '@shared/dinheiro'
 import type { ResumoCaixa } from '@shared/caixa'
 import type { Produto } from '@shared/produtos'
 import {
@@ -22,6 +22,7 @@ import { Pagamento } from './Pagamento'
 type Modal =
   | { tipo: 'busca' }
   | { tipo: 'peso'; produto: Produto }
+  | { tipo: 'precoLivre'; produto: Produto; quantidade: number }
   | { tipo: 'descontoItem'; item: ItemVenda }
   | { tipo: 'descontoVenda' }
   | { tipo: 'acrescimoVenda' }
@@ -263,10 +264,15 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
       const r = await window.pdv.vendas.adicionarCodigo(entrada.codigo, entrada.quantidade)
       if (r.tipo === 'adicionado') itemAdicionado(r.venda)
       else if (r.tipo === 'pedirQuantidade') setModal({ tipo: 'peso', produto: r.produto })
+      else if (r.tipo === 'pedirPreco') setModal({ tipo: 'precoLivre', produto: r.produto, quantidade: r.quantidade })
       else falhar(`Código ${r.codigo} não encontrado. F2 busca pelo nome.`)
     })
 
   async function escolherNaBusca(produto: Produto): Promise<void> {
+    if (produto.precoLivre) {
+      setModal({ tipo: 'precoLivre', produto, quantidade: 1000 })
+      return
+    }
     if (produto.unidade === 'KG') {
       setModal({ tipo: 'peso', produto })
       return
@@ -659,6 +665,22 @@ export function Vender({ onVoltar }: { onVoltar: () => void }): React.JSX.Elemen
           produto={modal.produto}
           confirmar={async (q) => {
             itemAdicionado(await window.pdv.vendas.adicionarProduto(modal.produto.id, q))
+            setModal(null)
+            return null
+          }}
+          onFechar={() => setModal(null)}
+        />
+      )}
+
+      {modal?.tipo === 'precoLivre' && (
+        <Prompt
+          titulo={modal.produto.descricao}
+          rotulo={modal.quantidade === 1000 ? 'Valor (R$)' : `Valor de cada um (R$) · ${qtd(modal.quantidade, 'UN')} un`}
+          dica="Digite o valor e Enter. Esc desiste."
+          confirmar={async (texto) => {
+            const valor = lerMoeda(texto)
+            if (valor === null || valor <= 0) return 'Valor inválido'
+            itemAdicionado(await window.pdv.vendas.adicionarProduto(modal.produto.id, modal.quantidade, valor))
             setModal(null)
             return null
           }}

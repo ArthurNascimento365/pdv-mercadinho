@@ -84,7 +84,7 @@ export interface CanaisIpc {
 
   'vendas:atual': { args: []; retorno: Venda | null }
   'vendas:adicionarCodigo': { args: [codigo: string, quantidade: Milesimos | null]; retorno: ResultadoAdicionar }
-  'vendas:adicionarProduto': { args: [produtoId: number, quantidade: Milesimos]; retorno: Venda }
+  'vendas:adicionarProduto': { args: [produtoId: number, quantidade: Milesimos, valor?: Centavos | null]; retorno: Venda }
   'vendas:alterarQuantidade': { args: [itemId: number, quantidade: Milesimos]; retorno: Venda }
   'vendas:opcoesTabela': { args: [itemId: number]; retorno: OpcoesTabela | null }
   'vendas:alterarTabelaItem': { args: [itemId: number, tabela: TabelaPreco]; retorno: Venda }
@@ -227,7 +227,8 @@ export interface PdvApi {
     /** Venda em andamento (inclusive a que sobrou de uma queda do PDV). */
     atual(): Promise<Venda | null>
     adicionarCodigo(codigo: string, quantidade: Milesimos | null): Promise<ResultadoAdicionar>
-    adicionarProduto(produtoId: number, quantidade: Milesimos): Promise<Venda>
+    /** `valor`: preço unitário digitado, só para produto de preço livre. */
+    adicionarProduto(produtoId: number, quantidade: Milesimos, valor?: Centavos | null): Promise<Venda>
     alterarQuantidade(itemId: number, quantidade: Milesimos): Promise<Venda>
     /** Preço do item em cada tabela; null quando não há o que escolher. */
     opcoesTabela(itemId: number): Promise<OpcoesTabela | null>

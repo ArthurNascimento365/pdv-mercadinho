@@ -30,7 +30,7 @@ export function produtosParaEtiqueta(db: Banco, desde: unknown, hoje = hojeLocal
   const ids = db
     .prepare(
       `SELECT id FROM produtos
-       WHERE ativo = 1 AND (
+       WHERE ativo = 1 AND preco_livre = 0 AND (
          preco_alterado_em >= :desde
          OR (promocao_inicio IS NOT NULL AND promocao_inicio >= :desdeDia AND promocao_inicio <= :hoje)
          OR (promocao_fim IS NOT NULL AND promocao_fim >= date(:desdeDia, '-1 day') AND promocao_fim < :hoje)

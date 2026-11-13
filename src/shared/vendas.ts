@@ -83,6 +83,8 @@ export type ResultadoAdicionar =
   | { tipo: 'adicionado'; venda: Venda }
   /** Produto pesado digitado sem etiqueta: o caixa precisa informar o peso. */
   | { tipo: 'pedirQuantidade'; produto: Produto }
+  /** Produto de preço livre: o caixa digita o valor (a quantidade veio do multiplicador). */
+  | { tipo: 'pedirPreco'; produto: Produto; quantidade: Milesimos }
   | { tipo: 'naoEncontrado'; codigo: string }
 
 /**

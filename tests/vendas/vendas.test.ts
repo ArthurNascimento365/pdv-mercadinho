@@ -401,4 +401,46 @@ describe('vendas', () => {
       )
     })
   })
+describe('preço livre', () => {
+    const diversos = () =>
+      criarProduto(db, entrada({ descricao: 'DIVERSOS', codigoBalanca: 1, precoVenda: 0, precoCusto: null, estoqueAtual: 5_000, precoLivre: true }))
+
+    it('cadastro: preço e estoque não valem, só por unidade', () => {
+      const p = diversos()
+      expect(p).toMatchObject({ precoLivre: true, precoVenda: 1, estoqueAtual: 0, estoqueMinimo: 0 })
+      expect(() => criarProduto(db, entrada({ descricao: 'X', unidade: 'KG', precoLivre: true }))).toThrow(/por unidade/)
+    })
+
+    it('o código pede o valor; cada valor vira uma linha, sem baixar estoque', () => {
+      const p = diversos()
+      expect(bipar('1')).toEqual({ tipo: 'pedirPreco', produto: p, quantidade: 1000 })
+      expect(bipar('1', 3000)).toMatchObject({ tipo: 'pedirPreco', quantidade: 3000 })
+      expect(() => adicionarProduto(db, p.id, 1000)).toThrow(/Valor inválido/)
+      expect(() => adicionarProduto(db, p.id, 1000, 0)).toThrow(/Informe o valor/)
+      expect(() => adicionarProduto(db, leite.id, 1000, 500)).toThrow(/preço no cadastro/)
+      adicionarProduto(db, p.id, 1000, 1000)
+      bipar(EAN_LEITE)
+      const v = adicionarProduto(db, p.id, 2000, 350)
+      expect(v.itens.map((i) => [i.descricao, i.quantidade, i.precoUnitario, i.total])).toEqual([
+        ['DIVERSOS', 1000, 1000, 1000],
+        ['Leite Condensado', 1000, 749, 749],
+        ['DIVERSOS', 2000, 350, 700]
+      ])
+      expect(v.total).toBe(2449)
+      expect(opcoesTabelaItem(db, v.itens[0]!.id)).toBeNull()
+      adicionarPagamento(db, 'dinheiro', 2449)
+      const fin = finalizarVenda(db)
+      expect(obterProduto(db, p.id)!.estoqueAtual).toBe(0)
+      expect(obterProduto(db, leite.id)!.estoqueAtual).toBe(9_000)
+      cancelarVendaFinalizada(db, fin.id)
+      expect(obterProduto(db, p.id)!.estoqueAtual).toBe(0)
+      expect(obterProduto(db, leite.id)!.estoqueAtual).toBe(10_000)
+    })
+
+    it('alterar a quantidade mantém o valor digitado', () => {
+      const p = diversos()
+      const v = adicionarProduto(db, p.id, 1000, 1250)
+      expect(alterarQuantidade(db, v.itens[0]!.id, 2000).total).toBe(2500)
+    })
+  })
 })

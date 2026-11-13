@@ -202,7 +202,7 @@ export function registrarIpc({ db, caminhoBanco, impressao, backup }: ContextoIp
     if (quantidade !== null && typeof quantidade !== 'number') throw new ErroNegocio('Quantidade inválida')
     return adicionarPorCodigo(db, exigirTexto(codigo, 'código', { max: 30 }), quantidade, obterFormatoBalanca(db))
   })
-  tratar('vendas:adicionarProduto', (produtoId, quantidade) => adicionarProduto(db, produtoId, quantidade))
+  tratar('vendas:adicionarProduto', (produtoId, quantidade, valor) => adicionarProduto(db, produtoId, quantidade, valor ?? null))
   tratar('vendas:alterarQuantidade', (itemId, quantidade) => alterarQuantidade(db, itemId, quantidade))
   tratar('vendas:opcoesTabela', (itemId) => opcoesTabelaItem(db, itemId))
   tratar('vendas:alterarTabelaItem', (itemId, tabela) => alterarTabelaItem(db, itemId, tabela))

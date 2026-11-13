@@ -32,6 +32,7 @@ interface LinhaProduto {
   atacado_quantidade: number | null
   atacado_preco: number | null
   preco_a_prazo: number | null
+  preco_livre: number
 }
 
 const SELECT_PRODUTO = `
@@ -61,7 +62,8 @@ function paraProduto(l: LinhaProduto): Produto {
     promocaoFim: l.promocao_fim,
     atacadoQuantidade: l.atacado_quantidade,
     atacadoPreco: l.atacado_preco,
-    precoAPrazo: l.preco_a_prazo
+    precoAPrazo: l.preco_a_prazo,
+    precoLivre: l.preco_livre === 1
   }
 }
 
@@ -134,7 +136,11 @@ export function validarProdutoEntrada(dado: unknown): ProdutoEntrada {
       ? null
       : inteiro(d['codigoBalanca'], 'Código interno/da balança', 1, 999_999)
 
-  const precoVenda = inteiro(d['precoVenda'], 'Preço de venda', 0, PRECO_MAXIMO)
+  if (d['precoLivre'] !== undefined && typeof d['precoLivre'] !== 'boolean') throw new ErroNegocio('Opção de preço livre inválida')
+  const precoLivre = d['precoLivre'] === true
+  if (precoLivre && unidade !== 'UN') throw new ErroNegocio('Preço livre vale só para produto vendido por unidade')
+  // Preço livre: o valor é digitado na venda; o preço do cadastro fica 1 centavo (só cumpre o CHECK).
+  const precoVenda = precoLivre ? 1 : inteiro(d['precoVenda'], 'Preço de venda', 0, PRECO_MAXIMO)
   if (precoVenda === 0) throw new ErroNegocio('Informe o preço de venda')
   const precoCusto =
     d['precoCusto'] === null || d['precoCusto'] === undefined
@@ -155,9 +161,13 @@ export function validarProdutoEntrada(dado: unknown): ProdutoEntrada {
     precoVenda,
     precoCusto,
     categoria,
-    estoqueAtual: inteiro(d['estoqueAtual'] ?? 0, 'Estoque atual', -ESTOQUE_MAXIMO, ESTOQUE_MAXIMO),
-    estoqueMinimo: inteiro(d['estoqueMinimo'] ?? 0, 'Estoque mínimo', 0, ESTOQUE_MAXIMO),
-    ...validarPromocoes(d, precoVenda, unidade)
+    // Preço livre não controla estoque nem tem promoção, atacarejo ou preço NORMAL.
+    estoqueAtual: precoLivre ? 0 : inteiro(d['estoqueAtual'] ?? 0, 'Estoque atual', -ESTOQUE_MAXIMO, ESTOQUE_MAXIMO),
+    estoqueMinimo: precoLivre ? 0 : inteiro(d['estoqueMinimo'] ?? 0, 'Estoque mínimo', 0, ESTOQUE_MAXIMO),
+    ...(precoLivre
+      ? { precoPromocional: null, promocaoInicio: null, promocaoFim: null, atacadoQuantidade: null, atacadoPreco: null, precoAPrazo: null }
+      : validarPromocoes(d, precoVenda, unidade)),
+    precoLivre
   }
 }
 
@@ -313,7 +323,8 @@ function parametros(db: Banco, e: ProdutoEntrada) {
     promocao_fim: e.promocaoFim ?? null,
     atacado_quantidade: e.atacadoQuantidade ?? null,
     atacado_preco: e.atacadoPreco ?? null,
-    preco_a_prazo: e.precoAPrazo ?? null
+    preco_a_prazo: e.precoAPrazo ?? null,
+    preco_livre: e.precoLivre ? 1 : 0
   }
 }
 
@@ -321,6 +332,7 @@ function parametros(db: Banco, e: ProdutoEntrada) {
 function mudouPreco(atual: Produto, e: ProdutoEntrada): boolean {
   return (
     atual.precoVenda !== e.precoVenda ||
+    atual.precoLivre !== (e.precoLivre ?? false) ||
     atual.precoPromocional !== (e.precoPromocional ?? null) ||
     atual.promocaoInicio !== (e.promocaoInicio ?? null) ||
     atual.promocaoFim !== (e.promocaoFim ?? null) ||
@@ -337,10 +349,10 @@ export function criarProduto(db: Banco, dado: unknown): Produto {
       .prepare(
         `INSERT INTO produtos (ean, codigo_balanca, descricao, descricao_busca, unidade, preco_venda,
            preco_custo, categoria_id, estoque_minimo, preco_promocional, promocao_inicio, promocao_fim,
-           atacado_quantidade, atacado_preco, preco_a_prazo)
+           atacado_quantidade, atacado_preco, preco_a_prazo, preco_livre)
          VALUES (:ean, :codigo_balanca, :descricao, :descricao_busca, :unidade, :preco_venda,
            :preco_custo, :categoria_id, :estoque_minimo, :preco_promocional, :promocao_inicio, :promocao_fim,
-           :atacado_quantidade, :atacado_preco, :preco_a_prazo)`
+           :atacado_quantidade, :atacado_preco, :preco_a_prazo, :preco_livre)`
       )
       .run(parametros(db, entrada))
     const id = Number(r.lastInsertRowid)
@@ -376,6 +388,7 @@ export function atualizarProduto(db: Banco, id: number, dado: unknown): Produto 
          atacado_quantidade = :atacado_quantidade,
          atacado_preco = :atacado_preco,
          preco_a_prazo = :preco_a_prazo,
+         preco_livre = :preco_livre,
          atualizado_em = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
        WHERE id = :id`
     ).run({ ...parametros(db, entrada), id, mudou_preco: mudouPreco(atual, entrada) ? 1 : 0 })
@@ -410,6 +423,7 @@ export function produtoParaEntrada(p: Produto): ProdutoEntrada {
     promocaoFim: p.promocaoFim,
     atacadoQuantidade: p.atacadoQuantidade,
     atacadoPreco: p.atacadoPreco,
-    precoAPrazo: p.precoAPrazo
+    precoAPrazo: p.precoAPrazo,
+    precoLivre: p.precoLivre
   }
 }
