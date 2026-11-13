@@ -230,7 +230,7 @@ Roadmap e especificação dos diferenciais: doc "PDV Mercadinho — Roadmap MVP 
   ao subtotal (reduz sozinho se itens forem cancelados).
 - Caixa (tela Vender): Enter lança o código; `3*código` multiplica; PLU de até 6 dígitos
   digitado à mão pede o peso; F2 busca, F5/F6 desconto item/venda, F1 acréscimo na venda, F7/F8 cancela item/venda,
-  F9 cancela a última venda finalizada. F3 vale antes do primeiro item:  abre a
+  F9 cancela a última venda finalizada. F3 vale antes do primeiro item: `definirClienteVenda` abre a
   venda (vazia, com o cliente). As buscas do F2 (produto) e do F3 (cliente) têm botão/tecla F2 de
   cadastro: o produto novo entra direto na venda (KG pede o peso) e o cliente novo fica na venda;
   o termo digitado vira descrição/nome (ou código, se só números). Pagamento: Enter com o campo de código vazio (e itens na
